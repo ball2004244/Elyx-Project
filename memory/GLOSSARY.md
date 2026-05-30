@@ -56,10 +56,27 @@ The competing objectives the scheduler balances when placing each activity. Good
 
 ## Activity field names (canonical keys)
 
+The Activity object has **14 fields**: the 10 from the assignment + 4 added.
+
 Used in schemas and CSV headers:
 
-`activityType`, `frequency`, `details`, `facilitator`, `location`, `remoteCapable`, `prep`, `backups`, `skipAdjustment`, `metrics`, plus `id`, `priority`.
+**From the assignment (10):**
+`activityType`, `frequency`, `details`, `facilitator`, `location`, `remoteCapable`, `prep`, `backups`, `skipAdjustment`, `metrics`
+
+**Added (4):**
+- `id` - stable identifier (so `backups` can reference activities; instances are trackable).
+- `priority` - integer health-importance rank (1 = top). An **input** from HealthSpan AI, never computed by the allocator.
+- `priorityRationale` - supporting evidence for the priority. Set upstream (the LLM sampler plays HealthSpan AI). Traceability/display ONLY; the scheduler never reads it.
+- `requiredEquipment` - equipment ids the activity needs (enables Constraint C3 checks).
 
 ## Activity types (enum)
 
 `fitness` | `food` | `medication` | `therapy` | `consultation`
+
+The assignment's two "one of the following" lists mean different things:
+- The **10 fields** are attributes describing every action simultaneously (a row's columns), NOT mutually exclusive choices despite the PDF calling them "subtypes".
+- The **5 activity types** above ARE mutually exclusive; `activityType` (field #1) picks exactly one.
+
+## Action Plan shape
+
+A multi-row table ordered by `priority`. **Each row = one action = all 14 fields.** Field #1 (`activityType`) selects one of the 5 activity types.

@@ -19,6 +19,8 @@ Human-agent agreement. Captured before implementation. Update when a decision ch
 | D6 | Output format | Readable calendar view (React + Tailwind) | Assignment: no polished UI needed, but output must be calendar-readable. |
 | D7 | App shape | Single-member app | Per agreement; richer per-member data, simpler model for v0.1. |
 | D8 | v0.1 view/scheduling window | 1 week (weekly grid + daily detail) | Fast to build and demo; full 3-month data still generated for the release gate. |
+| D9 | Sample-data source | LLM sampler (prompts in `src/prompts/sampler.md`), output validated against Zod schemas | We use an LLM to generate realistic Elyx data; the member's `priority` + `priorityRationale` are produced as if by HealthSpan AI. Prompts are a required submission artifact. |
+| D10 | Activity field count | 14 fields (10 assignment + id, priority, priorityRationale, requiredEquipment) | priorityRationale (field 14) added for evidence/traceability, matching Elyx's evidence-backed positioning; read by UI only, never by the scheduler. |
 
 ---
 

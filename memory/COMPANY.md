@@ -1,8 +1,7 @@
-# Elyx / Elyx 360 - Company Brief for AI Engineer Applicant
+# Elyx / Elyx 360 - Company Brief
 
-Generated: 2026-05-30  
-Purpose: fast but evidence-backed prep for recruiter and interview conversations.  
-Role target: AI Engineer / AI Systems Engineer.
+Generated: 2026-05-30
+Purpose: evidence-backed company research to ground a production-grade build of the Resource Allocator and the broader Elyx 360 accuracy/adherence loop. This file is context, not a spec — it explains who Elyx is, what they ship, and what their domain demands of the systems we build.
 
 ---
 
@@ -10,16 +9,16 @@ Role target: AI Engineer / AI Systems Engineer.
 
 Elyx is a Singapore-based concierge longevity / healthspan company. The commercial product is a high-touch, membership-based healthspan service at Raffles Hotel Arcade. The technology product is Elyx 360, described by the company as an AI-powered operating system for proactive healthcare: unified health records, care-team orchestration, risk intelligence, clinical workflows, and member-facing engagement.
 
-The recruiter framed the company around two problems: **accuracy** and **adherence**. That is consistent with public evidence:
+Elyx frames its core product challenge around two problems: **accuracy** and **adherence**. That is consistent with public evidence:
 
 - **Accuracy**: Elyx 360 emphasizes structured longitudinal data, labs, wearables, genetics, clinical notes, risk scoring, evidence-backed recommendations, traceability, contraindication detection, and human verification.
 - **Adherence**: Elyx's app and concierge model focus on habits, goals, personalized training/recovery/sleep/nutrition guidance, reminders, care coordination, scheduling, and follow-up management.
 
-For an AI Engineer, this is not primarily a chatbot role. It is likely a high-stakes AI systems role: RAG over medical/longevity research, member-specific reasoning, traceable recommendations, AI agent workflows, messy health-data interpretation, clinician-in-the-loop review, and adherence/product feedback loops.
+The Resource Allocator we are building sits squarely on the **adherence** side: HealthSpan AI decides _what_ a member should do (accuracy); the allocator decides _when and how_ it can actually happen against real-world constraints. The systems in this domain are not chatbots — they are high-stakes, auditable, human-supervised pipelines: RAG over medical/longevity research, member-specific reasoning, traceable recommendations, agent workflows, messy health-data interpretation, clinician-in-the-loop review, and adherence/product feedback loops.
 
-Most important applicant positioning:
+Guiding product principle:
 
-> I build reliable, auditable, human-supervised AI systems that improve both recommendation accuracy and real-world adherence.
+> Build reliable, auditable, human-supervised systems that improve both recommendation accuracy and real-world adherence.
 
 ---
 
@@ -27,9 +26,9 @@ Most important applicant positioning:
 
 Elyx is trying to turn longevity care from a fragmented, episodic, expert-service model into a coordinated, data-driven, AI-assisted operating system for proactive healthspan management.
 
-A useful interview framing:
+A useful product framing:
 
-> The company appears to be solving the gap between measurement and action: diagnostics and wearables can tell a member what is happening, but Elyx wants to decide what to do next, coordinate the experts, and get the member to follow through.
+> The company is solving the gap between measurement and action: diagnostics and wearables can tell a member what is happening, but Elyx wants to decide what to do next, coordinate the experts, and get the member to follow through.
 
 ---
 
@@ -67,7 +66,7 @@ Public Elyx 360 modules include:
 - **Clinical Safety**: contraindication detection, interaction alerts, audit trails, role-based access / permission sandboxing.
 - **Member Connection**: progress dashboards, goal tracking, milestone notifications, health literacy, upcoming actions.
 
-This suggests the core product is an integrated care workflow + health-data + AI decision-support platform.
+This suggests the core product is an integrated care workflow + health-data + AI decision-support platform. Note that **Dynamic Constraint Mapping** (member schedule, travel, dietary preferences, adaptive plan builder, unified timeline) is the published module our Resource Allocator most directly maps to.
 
 ---
 
@@ -91,12 +90,10 @@ Public evidence suggests Elyx is early, private, and actively shipping.
 
 Elyx is likely in a **private operating stage**: real facility, real team, real apps, real internal platform, but not broad public user growth. The app is probably used by internal staff, paid members, and/or invited pilots rather than open signup users.
 
-Interview implication: ask whether the AI team is building for:
+Open questions that shape product scope:
 
-1. internal clinicians/coaches only,
-2. paying members,
-3. both internal and member-facing workflows,
-4. future B2B deployment of Elyx 360.
+1. Is the platform built for internal clinicians/coaches only, paying members, both, or future B2B deployment of Elyx 360?
+2. Which of those audiences is the Resource Allocator's primary user — a coach building a member's plan, or the member themselves?
 
 ---
 
@@ -197,27 +194,21 @@ Interpretation:
 5. **They connect shipping to clinical risk**
    - Their testing blog explicitly mentions healthcare, scheduling, role-based permissions, wearable integrations, medication-adherence prompts, and clinician escalations.
 
-### Potential weak signals / caveats
+### Caveats to keep in mind when building
 
 1. **External product traction is not public**
-   - Android shows 10+ downloads.
-   - iOS has no enough ratings/reviews.
-   - This may be expected for a 50-member high-end service, but it means public traction is hard to evaluate.
+   - Android shows 10+ downloads; iOS has no enough ratings/reviews.
+   - This may be expected for a 50-member high-end service, but it means real-world usage data is thin — designs should not assume large-N behavior data exists yet.
 
-2. **Some public pages show rough edges**
-   - One Product Engineer page appears to describe a Front-End Framework Engineer in the opening paragraph. This looks like a copy/paste inconsistency.
+2. **Some public surfaces show rough edges**
+   - A Product Engineer page appears to open by describing a Front-End Framework Engineer (likely a copy/paste inconsistency).
    - App release notes have typos such as "fixed knows issues".
-   - These are not fatal, but they suggest the team is moving fast and public polish may lag.
+   - These suggest the team moves fast and public polish lags. Internal conventions may be inconsistent; lean on explicit schemas and docs.
 
-3. **Google Play privacy/data deletion mismatch to clarify**
+3. **Data deletion/retention is unclear**
    - Google Play says data is encrypted in transit but also indicates data cannot be deleted.
    - Elyx privacy policy gives PDPA-style rights around access, correction, withdrawal of consent, retention, and secure disposal, but deletion mechanics are not clearly described on the app listing.
-   - As an applicant, ask how data deletion/retention works for health and wearable data.
-
-4. **Team count discrepancy**
-   - Recruiter said 5 Korean SWE experts + 3 AI engineers.
-   - Public Elyx 360 team page lists 4 AI Engineer profiles and a broader leadership/domain team.
-   - This may just be stale public data or role categorization. Ask for current AI team structure.
+   - Any system handling member health/wearable data should make retention and deletion explicit rather than assumed.
 
 ---
 
@@ -238,6 +229,8 @@ Elyx Life's consumer positioning is:
 - Biological age is framed as negotiable and influenced by repeated choices.
 - The company wants to remove friction, decision fatigue, and fragmented advice from health optimization.
 
+The Resource Allocator is a direct expression of "remove friction": it turns a correct-but-abstract action plan into a concrete, livable schedule.
+
 ### Engineering philosophy
 
 From careers and blog pages, the engineering culture appears to value:
@@ -252,25 +245,24 @@ From careers and blog pages, the engineering culture appears to value:
 
 A useful mental model:
 
-> Elyx wants engineers who build the system that builds the product, not only engineers who implement tickets.
+> Elyx builds the system that builds the product, not only features that implement tickets.
 
-### What this means culturally
+### What this implies for how we build
 
-Likely good fit if you like:
+The domain rewards:
 
-- High ambiguity.
-- Small team speed.
-- AI agents and automation.
-- Product + systems thinking.
-- Health data complexity.
-- Working close to clinician workflows.
+- High ambiguity tolerance and small-team speed.
+- AI agents and automation as first-class building blocks.
+- Product + systems thinking together.
+- Comfort with health-data complexity.
+- Building close to clinician/coach workflows.
 
-Likely bad fit if you want:
+It penalizes:
 
-- Stable requirements.
-- Pure ML research without product integration.
-- Large mature engineering org processes.
-- Clearly separated product/backend/frontend/ML boundaries.
+- Designs that assume stable, fully-specified requirements.
+- Pure model work disconnected from product integration.
+- Heavy process overhead borrowed from large mature orgs.
+- Rigidly siloed product/backend/frontend/ML boundaries.
 
 ---
 
@@ -280,8 +272,8 @@ Likely bad fit if you want:
 
 | Person | Public role | Signal | Why it matters |
 |---|---|---|---|
-| Ashish Chordia | CEO and Co-Founder | Founder/board member at Alphonso / LG Ads Solutions; Elyx page says company is on track for US$1B+ revenue and IPO direction in 2026. | Suggests strong personalization/infrastructure background. |
-| Peng T. Ong | Chairman and Co-Founder | Co-founder/Managing Partner at Monk's Hill Ventures; co-founded Match.com, Interwoven, Encentuate. Monk's Hill profile says products collectively generate over US$1B annual revenue. | Serious founder/investor signal; likely expects first-principles, fast, high-agency builders. |
+| Ashish Chordia | CEO and Co-Founder | Founder/board member at Alphonso / LG Ads Solutions; Elyx page says company is on track for US$1B+ revenue and IPO direction in 2026. | Personalization/infrastructure background at scale. |
+| Peng T. Ong | Chairman and Co-Founder | Co-founder/Managing Partner at Monk's Hill Ventures; co-founded Match.com, Interwoven, Encentuate. Monk's Hill profile says products collectively generate over US$1B annual revenue. | Serious founder/investor signal; first-principles, high-agency bias. |
 | Nishanth Sudharsanam | CTO and Co-Founder | Elyx page says 15+ years building healthcare software; authored AI-first product engineering blog. | Relevant technical/healthcare leadership. |
 | Dr. Varun Reddy | CCO / CMO and Co-Founder | Clinician-scientist; public pages describe 15+ years across surgery, stem cell biology, translational medicine, cognitive neuroscience/regenerative medicine. | Clinical rigor and protocol design. |
 | Cheehan Tee | COO | Public page says built and led global teams across MNCs/startups that achieved 1000x growth. | Operating/scaling background. |
@@ -304,13 +296,13 @@ Notable public domain experts include:
 - Dr. Jian Fransen - research / clinical advisor; experience in AI in clinical settings and clinical trials.
 - Movement, nutrition, clinic operations, nursing, performance, and clinical research specialists.
 
-Interpretation: the team appears intentionally built around the intersection of AI, clinical science, and high-touch concierge delivery.
+Interpretation: the team is intentionally built around the intersection of AI, clinical science, and high-touch concierge delivery. The presence of allied-health and movement/nutrition specialists confirms that the "Specialists" and "Allied Health" constraint nodes in the Resource Allocator map to real roles.
 
 ---
 
-## 9. Accuracy: likely meaning inside Elyx
+## 9. Accuracy: what it means inside Elyx
 
-The recruiter said one of the two core problems is accuracy. For Elyx, accuracy likely has multiple layers.
+Accuracy is one of the two core product problems. For Elyx it has multiple layers.
 
 ### 9.1 Data accuracy
 
@@ -324,47 +316,32 @@ The hard problem is not just ingesting wearables. Their own blog says wearable s
 - units such as mmol/L vs mg/dL,
 - provider-specific concepts such as Garmin stress, WHOOP recovery, Oura readiness, Apple HRV SDNN.
 
-Good applicant signal:
+Design implication:
 
-> I would treat health-data accuracy as a provenance, canonicalization, timezone, and observability problem before treating it as an LLM problem.
+> Treat health-data accuracy as a provenance, canonicalization, timezone, and observability problem before treating it as a model problem.
 
 ### 9.2 Recommendation accuracy
 
-Public AI role requirements emphasize:
+Public AI descriptions emphasize:
 
 - RAG systems,
 - agentic workflows,
-- fine-tuned models,
+- fine-tuned models where needed,
 - latest medical research ingestion,
 - mapping research to individual member profiles,
 - every recommendation backed by data,
 - human expert verification,
 - learning from member progress and real-world outcomes.
 
-Accuracy here means:
-
-- scientifically grounded,
-- member-specific,
-- traceable to sources/data,
-- safe under contraindications/interactions,
-- reviewed by clinicians/coaches,
-- measured after deployment.
+Accuracy here means recommendations that are scientifically grounded, member-specific, traceable to sources/data, safe under contraindications/interactions, reviewed by clinicians/coaches, and measured after deployment. In our project, this is the **HealthSpan AI / action-plan** side, including the `priority` and `priorityRationale` fields that carry evidence into the allocator.
 
 ### 9.3 Workflow accuracy
 
 AI must route the right issue to the right expert, not just answer questions. Elyx 360 includes scheduling, referral routing, follow-up triggers, escalation workflows, and care pods.
 
-Accuracy therefore also means:
+Accuracy therefore also means no missed follow-ups, correct escalation, correct permissions, correct role-based visibility, and correct timing across travel/time zones. The Resource Allocator inherits the timing/availability slice of this: placing the right activity with the right facilitator at a time that is actually feasible.
 
-- no missed follow-ups,
-- correct escalation,
-- correct permissions,
-- correct role-based visibility,
-- correct timing across travel/time zones.
-
-### AI Engineer angle
-
-A strong AI Engineer should be ready to talk about:
+### System design checklist for accuracy
 
 - eval datasets and clinician-labeled gold sets,
 - hallucination controls,
@@ -379,11 +356,11 @@ A strong AI Engineer should be ready to talk about:
 
 ---
 
-## 10. Adherence: likely meaning inside Elyx
+## 10. Adherence: what it means inside Elyx
 
-The second recruiter keyword was adherence. This is likely the business-critical loop.
+Adherence is the second core problem and the business-critical loop. The Resource Allocator lives here.
 
-A perfect protocol does not matter if the member does not follow it. For Elyx, adherence probably means:
+A perfect protocol does not matter if the member does not follow it. For Elyx, adherence means:
 
 - completing daily/weekly goals,
 - following training/recovery/sleep/nutrition guidance,
@@ -396,52 +373,36 @@ A perfect protocol does not matter if the member does not follow it. For Elyx, a
 
 The app is described as helping members build healthy habits and achieve personal goals through personalized fitness, recovery, sleep, and nutrition guidance. Version history includes wearable connections, Apple Health, new goal display, notification toggle handling, and chat.
 
-### AI opportunities around adherence
+### Where the Resource Allocator fits
 
-Potential AI systems:
+The allocator is an adherence engine. It converts protocols into placeable daily/weekly actions under the member's real constraints (schedule, travel, equipment, specialists, allied health), uses backups and skip-adjustments instead of silently dropping activities, and attaches metrics so completion can be measured. Adjacent adherence systems this enables or feeds:
 
-1. **Adaptive adherence planner**
-   - Converts protocols into daily actions based on member schedule, travel, preferences, and constraints.
+1. **Adaptive adherence planner** - converts protocols into daily actions based on member schedule, travel, preferences, and constraints (the allocator itself).
+2. **Nudge personalization** - learns which reminders, timing, tone, and action size produce completion.
+3. **Risk-of-dropoff prediction** - flags members likely to miss actions or disengage.
+4. **Coach copilot** - summarizes member progress, missed actions, barriers, and suggested interventions.
+5. **Outcome loop** - connects issued recommendation -> action completed -> wearable/lab signal -> clinician review -> next protocol adjustment.
 
-2. **Nudge personalization**
-   - Learns which reminders, timing, tone, and action size produce completion.
+Guiding line:
 
-3. **Risk-of-dropoff prediction**
-   - Flags members likely to miss actions or become disengaged.
-
-4. **Coach copilot**
-   - Summarizes member progress, missed actions, barriers, and suggested interventions.
-
-5. **Outcome loop**
-   - Connects issued recommendation -> action completed -> wearable/lab signal -> clinician review -> next protocol adjustment.
-
-Strong applicant line:
-
-> I would connect adherence to measurement: recommendation issued, action assigned, member behavior observed, signal updated, clinician review completed, plan adjusted.
+> Connect adherence to measurement: recommendation issued, action assigned, member behavior observed, signal updated, clinician review completed, plan adjusted.
 
 ---
 
-## 11. AI Engineer role: what they likely need
+## 11. What this domain demands of the systems we build
 
-### Based on the public AI Systems Engineer JD
-
-They want someone to build the intelligence layer that synthesizes health datasets into actionable, traceable, personalized recommendations and feedback loops.
-
-Likely responsibilities:
+Elyx 360's intelligence layer synthesizes health datasets into actionable, traceable, personalized recommendations and feedback loops. Systems built in this domain should expect to:
 
 - Build production RAG over medical/longevity research.
 - Build agentic workflows for research synthesis and workflow automation.
-- Potentially fine-tune models where needed.
 - Map research and protocols to individual member profiles.
 - Ensure traceability and human verification.
 - Build feedback loops from outcomes/progress.
 - Streamline clinician/concierge workflows.
-- Work with sensitive health data in a regulated/high-stakes context.
-- Explain AI failure modes clearly.
+- Handle sensitive health data in a regulated/high-stakes context.
+- Expose AI failure modes clearly rather than hiding them.
 
-### Skills to emphasize
-
-Prioritize these in resume / recruiter call:
+### Engineering competencies the domain rewards
 
 - Production RAG: retrieval, chunking, reranking, citations, freshness, evals.
 - Agent workflows: tool use, task decomposition, guardrails, regression testing.
@@ -452,21 +413,15 @@ Prioritize these in resume / recruiter call:
 - Product thinking: adherence metrics, user friction, coach workflow design.
 - Systems engineering: pipelines, observability, CI/CD, feature flags, failure recovery.
 
-### Avoid this framing
+### Framing the value
 
-Avoid saying:
-
-> I can build a health chatbot.
-
-Say instead:
-
-> I can build clinician-supervised AI systems for evidence-grounded recommendation support, with provenance, evals, audit trails, and adherence feedback loops.
+The hard problem is not generating health advice. It is building a trustworthy system around it: provenance, personalization, evals, human review, privacy, and feedback loops. Concretely, the highest-leverage build is the accuracy/adherence loop — a source-grounded recommendation pipeline, a clinician review surface, adherence tracking, and eval dashboards that measure both AI quality and real-world follow-through. The Resource Allocator is the adherence-tracking + scheduling component of that loop.
 
 ---
 
-## 12. Regulatory and safety context to understand
+## 12. Regulatory and safety context
 
-Elyx is in Singapore and works with health data, medical partners, diagnostics, and AI-supported recommendations. This creates real regulatory and safety constraints.
+Elyx is in Singapore and works with health data, medical partners, diagnostics, and AI-supported recommendations. This creates real regulatory and safety constraints that shape system design.
 
 Important public Singapore context:
 
@@ -474,19 +429,19 @@ Important public Singapore context:
 - HSA says digital health includes connected devices, wearables, mobile apps, and AI, and software intended for investigation, detection, diagnosis, monitoring, treatment, or management of a condition can be a regulated medical device.
 - Singapore's Health Information Bill / Health Information Act direction requires licensed healthcare providers to share key health data with NEHR, limits access to care purposes, prohibits employment/insurance access, and requires cybersecurity/data-security safeguards. MOH intends the HIB to take effect from early 2027.
 
-Applicant implication:
+Design implications:
 
-- Do not treat this as a casual wellness app.
-- Be careful about the boundary between wellness guidance, clinical decision support, and regulated software medical device territory.
-- Show that you understand audit logs, clinician approval, access controls, safety monitoring, and model-risk management.
+- This is not a casual wellness app; treat health data and recommendations with care.
+- Be careful about the boundary between wellness guidance, clinical decision support, and regulated software-as-a-medical-device territory.
+- Build for audit logs, clinician approval, access controls, safety monitoring, and model-risk management from the start.
 
-Good interview line:
+Design stance:
 
-> I would design the AI layer so that it can operate as decision support under uncertainty: source-grounded, auditable, permissioned, reviewed by experts, and monitored after deployment.
+> The AI layer should operate as decision support under uncertainty: source-grounded, auditable, permissioned, reviewed by experts, and monitored after deployment. The Resource Allocator should never silently drop a prescribed activity — it falls back to a backup or records a skip-adjustment so the trail stays auditable.
 
 ---
 
-## 13. What to ask recruiter / hiring manager
+## 13. Open questions that shape product scope
 
 ### Product stage
 
@@ -495,24 +450,24 @@ Good interview line:
 3. Is Elyx 360 intended to stay internal, or become a standalone B2B platform for clinics?
 4. What is the next 6-month product milestone?
 
-### AI scope
+### AI / system scope
 
-5. Is the AI team mostly building RAG, agent workflows, data interpretation, adherence personalization, or clinician automation?
-6. What model stack do you use today?
-7. How much freedom does the AI Engineer have to change product/workflow, not just model code?
-8. Does the role include backend/data engineering ownership?
+5. Is the intelligence layer mostly RAG, agent workflows, data interpretation, adherence personalization, or clinician automation?
+6. What model stack is used today?
+7. How much can a single system change product/workflow, not just model code?
+8. Does the scope include backend/data engineering ownership?
 
 ### Accuracy
 
-9. How do you define recommendation accuracy?
-10. Do you have clinician-labeled eval sets?
+9. How is recommendation accuracy defined?
+10. Are there clinician-labeled eval sets?
 11. What are the main failure modes today: retrieval errors, hallucination, data quality, personalization, or workflow routing?
 12. How are recommendations reviewed before members see them?
 13. What must the AI refuse or escalate?
 
 ### Adherence
 
-14. What adherence metric matters most: action completion, habit streaks, plan compliance, appointment completion, biomarker movement, member retention, or coach response time?
+14. Which adherence metric matters most: action completion, habit streaks, plan compliance, appointment completion, biomarker movement, member retention, or coach response time?
 15. What are the biggest reasons members fail to follow protocols?
 16. Does the app already track assigned actions and completion events?
 17. Is adherence handled mostly by the product, by concierge staff, or by AI?
@@ -521,129 +476,55 @@ Good interview line:
 
 18. What data sources are live today: Apple Health, Health Connect, Oura, Garmin, WHOOP, CGM, labs, DEXA, genetic data, clinical notes?
 19. What is the canonical longitudinal health record schema?
-20. How do you handle timezone changes, duplicate data, raw payload retention, and provenance?
+20. How are timezone changes, duplicate data, raw payload retention, and provenance handled?
 21. Is BigQuery the main analytics/curated warehouse, as the blog suggests?
 
 ### Compliance / security
 
 22. What is the current compliance posture: PDPA, HCSA, HIA readiness, ISO 27001, SOC 2, internal audits?
-23. How do you classify Elyx 360: wellness software, clinical decision support, or possible SaMD?
+23. How is Elyx 360 classified: wellness software, clinical decision support, or possible SaMD?
 24. How are audit logs and role-based access implemented?
 25. How does data deletion/retention work, given the app-store data safety listing?
 
 ---
 
-## 14. High-signal things to say in recruiter call
+## 14. Risks to design around
 
-Use this opening summary:
+These are not blockers. They are constraints to account for in design.
 
-> My read is that Elyx is solving a closed-loop healthcare AI problem. Accuracy means turning messy health data and medical research into traceable, clinician-reviewable recommendations. Adherence means turning those recommendations into actions members actually follow, then feeding outcomes back into the plan. That is the kind of AI system I want to build.
-
-Then ask:
-
-> Where is the biggest bottleneck today: data quality, recommendation accuracy, clinician review workflow, or member adherence?
-
-If they ask why Elyx:
-
-> I am interested because the hard problem is not generating health advice. The hard problem is building a trustworthy system around it: provenance, personalization, evals, human review, privacy, and feedback loops.
-
-If they ask what you would build:
-
-> I would start with the accuracy/adherence loop: a source-grounded recommendation pipeline, clinician review UI, adherence tracking, and eval dashboards that measure both AI quality and real-world follow-through.
-
----
-
-## 15. Possible 30/60/90-day plan as AI Engineer
-
-### First 30 days: understand and instrument
-
-- Map the AI system surface: data sources, prompts, tools, retrieval corpora, model calls, human review points.
-- Define the recommendation lifecycle: input data -> research retrieval -> reasoning -> recommendation -> expert review -> member action -> outcome signal.
-- Identify the current accuracy metrics, if any.
-- Identify adherence events captured today.
-- Review privacy/security constraints and access boundaries.
-- Build a first failure-mode registry: hallucination, stale sources, wrong member context, data duplication, timezone errors, contraindication misses, non-adherence.
-
-### Days 31-60: build eval and traceability foundation
-
-- Create a small clinician-labeled eval set for common recommendation categories.
-- Add source provenance and decision trace logging for AI recommendations.
-- Add offline regression tests for RAG and agent workflows.
-- Add abstention / escalation rules for insufficient evidence or high-risk recommendations.
-- Build a dashboard: retrieval accuracy, citation correctness, recommendation acceptance, reviewer edits, false positives, escalation rate.
-
-### Days 61-90: close the loop with adherence
-
-- Connect accepted recommendations to member action plans.
-- Track action assignment, completion, missed actions, and coach interventions.
-- Build AI summaries for clinicians/coaches: what changed, what was missed, what needs attention.
-- Start simple adherence prediction: who is likely to miss what and why.
-- Run a small product experiment around nudges, timing, or action decomposition.
-
----
-
-## 16. Critical risks / red flags to clarify
-
-These are not reasons to reject the company. They are things to understand before joining.
-
-### 16.1 Product risk
+### 14.1 Product risk
 
 - Public app traction is not measurable because the app is private/member-only.
 - Low downloads may be normal for a capped concierge model, but it limits public product-market validation.
-- Need to verify whether the platform is truly used daily by clinicians/members or still being built ahead of usage.
+- Unclear whether the platform is used daily by clinicians/members or still being built ahead of usage. Designs should degrade gracefully with sparse real usage.
 
-### 16.2 Data risk
+### 14.2 Data risk
 
 - Health data is messy and sparse, especially with a small member base.
-- Wearable and lab data may not be enough to train models; most AI value may come from workflow automation, RAG, and reasoning systems rather than custom ML.
-- Small-N personalization can be powerful but hard to validate statistically.
+- Wearable and lab data may not be enough to train models; most value may come from workflow automation, RAG, and reasoning systems rather than custom ML.
+- Small-N personalization can be powerful but hard to validate statistically. The Resource Allocator should work well from rules + constraints, not require a trained model.
 
-### 16.3 Scientific risk
+### 14.3 Scientific risk
 
 - Longevity claims can outrun evidence.
-- Strong applicant stance: be pro-innovation but evidence-disciplined.
-- Ask how Elyx distinguishes validated interventions from experimental/emerging therapies.
+- Stance: pro-innovation but evidence-disciplined.
+- Distinguish validated interventions from experimental/emerging therapies; `priorityRationale` is where that evidence lives.
 
-### 16.4 Regulatory risk
+### 14.4 Regulatory risk
 
-- The boundary between wellness guidance and clinical decision support can shift depending on product behavior.
+- The boundary between wellness guidance and clinical decision support can shift with product behavior.
 - If AI output influences diagnosis, monitoring, treatment, or management, HSA medical-device considerations may apply.
-- Ask how legal/clinical review is built into the product process.
+- Build legal/clinical review into the product process.
 
-### 16.5 Engineering/org risk
+### 14.5 Engineering/org risk
 
-- AI-native culture may move fast but be unstable.
-- Public pages show some rough edges and copy inconsistencies.
-- Role scope may be broad: AI Engineer may need to be data engineer, backend engineer, product engineer, and eval engineer.
-
----
-
-## 17. Fit assessment for you as AI Engineer
-
-This looks like a strong role if you want:
-
-- applied AI systems, not pure research;
-- high-stakes data/workflow problems;
-- RAG + agents + evals + human review;
-- health/wearable/lab/time-series data;
-- fast-moving small team;
-- product impact close to users and clinicians.
-
-It may be a poor fit if you want:
-
-- large-scale model training only;
-- mature data volume and clean labels;
-- low-regulation consumer app work;
-- narrow ML-only responsibility;
-- stable product requirements.
-
-Best personal brand for this role:
-
-> AI systems engineer for high-stakes workflows: I care about correctness, traceability, measurable outcomes, and how humans actually use the system.
+- AI-native culture moves fast but can be unstable.
+- Public surfaces show rough edges and copy inconsistencies.
+- Scope tends to be broad (data + backend + product + eval). Favor modular, well-documented boundaries so pieces can be owned independently.
 
 ---
 
-## 18. Source map
+## 15. Source map
 
 ### Official Elyx / Elyx 360
 
