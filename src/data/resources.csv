@@ -1,0 +1,27 @@
+kind,id,name,role,location,remoteOk
+equipment,eq-01,Treadmill,,Elyx gym,
+equipment,eq-02,Indoor Bike,,Elyx gym,
+equipment,eq-03,Rowing Ergometer,,Elyx gym,
+equipment,eq-04,Barbell & Rack,,Elyx gym,
+equipment,eq-05,Adjustable Dumbbells,,home,
+equipment,eq-06,Kettlebell Set,,home,
+equipment,eq-07,Infrared Sauna,,Elyx clinic,
+equipment,eq-08,Ice Bath / Plunge,,Elyx clinic,
+equipment,eq-09,Yoga Mat,,home,
+equipment,eq-10,HR Chest Strap,,home,
+equipment,eq-11,Massage Gun,,home,
+equipment,eq-12,Resistance Bands,,home,
+specialist,sp-01,Dr. Aisha Rahman,longevity physician,,true
+specialist,sp-02,Dr. Edmund Lai,cardiologist,,false
+specialist,sp-03,Dr. Priya Nair,endocrinologist,,true
+specialist,sp-04,Dr. Marcus Wong,sleep physician,,true
+specialist,sp-05,Dr. Sofia Alvarez,sports medicine physician,,false
+alliedHealth,ah-01,Jake Sullivan,personal trainer,,true
+alliedHealth,ah-02,Hannah Goh,physiotherapist,,true
+alliedHealth,ah-03,Lena Fischer,dietitian,,true
+alliedHealth,ah-04,Tomás Reyes,massage therapist,,false
+alliedHealth,ah-05,Anjali Menon,yoga instructor,,true
+alliedHealth,ah-06,Chris Tan,health coach,,true
+alliedHealth,ah-07,Maria Santos,nutritionist,,true
+alliedHealth,ah-08,Daniel Kim,personal trainer,,true
+alliedHealth,ah-09,Grace Lim,physiotherapist,,true

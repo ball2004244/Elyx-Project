@@ -19,9 +19,9 @@ data (static CSV, sampled locally)
        ├─ equipment.csv
        ├─ specialists.csv
        └─ alliedHealth.csv
-          │
+          │kv
           ▼
-  src/scheduler/  (pure functions)
+  src/scheduler/  (pure functions)v
      loadData → buildConstraintIndex → schedule(plan, constraints) → plan[]
           │
           ▼

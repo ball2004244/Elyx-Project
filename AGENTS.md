@@ -12,4 +12,7 @@
 - We use React + JavaScript + Tailwind. ALWAYS use bun.
 - Update human-agent agreement to `DECISIONS.md` before implement.
 - Write out your details plan to `PLAN.md` and `TODO.md`
+- ALWAYS follow `CodeStyle.md` during coding.
+- When performing Frontend UI/UX design, ALWAYS use `skills/taste-skill.md`
+- When writing test cases, ALWAYS use 3-3-3 rules: 3 happy, 3 hard, 3 edge cases.
 - MUST update `Implement.md` and `Lessons.md` and `TODO.md` after 1 iteration.

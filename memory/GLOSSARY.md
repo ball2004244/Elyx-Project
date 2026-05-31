@@ -56,18 +56,34 @@ The competing objectives the scheduler balances when placing each activity. Good
 
 ## Activity field names (canonical keys)
 
-The Activity object has **14 fields**: the 10 from the assignment + 4 added.
+The Activity object has **13 fields**: the 10 from the assignment + 3 added.
+(KISS — decision D36 dropped `requiredEquipment`, `track`, `effectiveFrom`,
+`effectiveUntil`.)
 
 Used in schemas and CSV headers:
 
 **From the assignment (10):**
 `activityType`, `frequency`, `details`, `facilitator`, `location`, `remoteCapable`, `prep`, `backups`, `skipAdjustment`, `metrics`
 
-**Added (4):**
+**Added (3):**
 - `id` - stable identifier (so `backups` can reference activities; instances are trackable).
 - `priority` - integer health-importance rank (1 = top). An **input** from HealthSpan AI, never computed by the allocator.
 - `priorityRationale` - supporting evidence for the priority. Set upstream (the LLM sampler plays HealthSpan AI). Traceability/display ONLY; the scheduler never reads it.
-- `requiredEquipment` - equipment ids the activity needs (enables Constraint C3 checks).
+
+Equipment is no longer a per-activity field; the Equipment constraint is checked
+at **venue level** derived from `location` (the gym/clinic open at that slot?).
+
+## Resource selection model
+
+- **Closed world (bank).** Activities, equipment, specialists, and allied-health providers come from fixed banks. The scheduler PICKS the most suitable AVAILABLE resource from the bank; it never invents new resources or activity types. New-resource / new-type / open-world dynamics are out of scope for v0.1.
+- **Role-based selection.** An activity's `facilitator` normally declares a `role`; the scheduler may pick ANY available provider of that role. `facilitator.resourceId` pins a specific provider only when continuity matters (e.g. same physician across longitudinal reviews). This enables **resource-level substitution** (try another qualifying provider) BEFORE activity-level `backups`.
+- **Referential integrity** (existence of referenced ids/roles) is enforced by a validator + defensive scheduling + tests, NOT by polluting the demo dataset with dangling refs.
+
+## Availability disruptions (realism)
+
+- Resource pools (Equipment/Specialists/Allied Health) carry optional reasoned `downtime` windows (maintenance, leave, cancellation) — explainable in the UI.
+- Client's Schedule entries have a `kind`: `commitment` (routine) vs `incident` (abrupt/unexpected, e.g. sick day).
+- Travel blocks change location: on-site equipment and in-person facilitators become unusable; only `remoteCapable` activities survive.
 
 ## Activity types (enum)
 
