@@ -10,7 +10,7 @@ Jira-like markdown template
 - [x] Implement the scheduler core (priority walk + multi-constraint slot placement, validity windows, downtime subtraction, role-based substitution, remote relaxation, backups, skip-adjustments, metrics attachment)
 - [x] Render output as weekly grid + daily detail (React + Tailwind), 1-week window
 - [x] UI rework: routine/event split (Daily Routine panel), deduped events (×N), grouped skipped list, Day/Week/Month switcher, corrected range header
-- [ ] Host on Vercel (hard requirement) + GitHub repo + document AI prompts
+- [x] Host on Vercel (hard requirement) + GitHub repo + document AI prompts
 
 ## Backlog
 
