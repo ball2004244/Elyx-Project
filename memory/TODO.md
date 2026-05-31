@@ -5,11 +5,11 @@ Jira-like markdown template
 ## Active (v0.1)
 
 - [x] Define data schemas (Activity = 16 fields incl. validity window; availability schemas for Travel, Equipment, Specialists, Allied Health, Client's Schedule with downtime/incidents) — single member
-- [x] Generate sample data locally: 114 activities → `src/data/action_plan.csv` (release gate met)
+- [x] Generate sample data locally: 104 activities → `src/data/action_plan.csv` (release gate met)
 - [x] Generate 3 months of availability data for all constraint nodes (normalized CSVs); validated, all references satisfiable
 - [x] Implement the scheduler core (priority walk + multi-constraint slot placement, validity windows, downtime subtraction, role-based substitution, remote relaxation, backups, skip-adjustments, metrics attachment)
 - [x] Render output as weekly grid + daily detail (React + Tailwind), 1-week window
-- [x] UI rework: routine/event split (Daily Protocol panel), deduped events (×N), grouped skipped list, Day/Week/Month switcher, corrected range header
+- [x] UI rework: routine/event split (Daily Routine panel), deduped events (×N), grouped skipped list, Day/Week/Month switcher, corrected range header
 - [ ] Host on Vercel (hard requirement) + GitHub repo + document AI prompts
 
 ## Backlog

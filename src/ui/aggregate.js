@@ -50,6 +50,8 @@ export function dedupeDay(dayInstances) {
         equipmentIds: inst.equipmentIds,
         metrics: inst.metrics,
         note: inst.note,
+        reason: inst.reason,
+        backupId: inst.backupId,
         count: 1,
         _key: `${inst.activityId}-${dayKey(inst.window.start)}`,
       });
@@ -76,7 +78,7 @@ export function bandByDayPart(dayRows) {
 }
 
 /**
- * Build the constant Daily Protocol from routine instances: one row per distinct
+ * Build the constant Daily Routine from routine instances: one row per distinct
  * routine activity, grouped by activity type, with the prescribed cadence label.
  * Deduped across the whole horizon (the protocol is largely the same each day).
  * @param {import('../lib/schemas.js').ScheduledInstance[]} routines
@@ -93,6 +95,7 @@ export function buildDailyProtocol(routines, activityById) {
       id: a.id,
       type: a.activityType,
       details: a.details,
+      label: shortLabel(a.details) || a.id,
       cadence: cadenceLabel(a.frequency),
     });
   }
@@ -108,6 +111,22 @@ export function buildDailyProtocol(routines, activityById) {
 /** "3x / week", "1x / day", etc. */
 export function cadenceLabel(freq) {
   return `${freq.count}x / ${freq.period}`;
+}
+
+/**
+ * A short, glanceable label from a long activity `details` string: the first
+ * clause, trimmed and capped. Full text stays available as a tooltip. Turns
+ * "Brisk outdoor walk, 30-40 min at 100-120 steps/min, ..." into "Brisk
+ * outdoor walk".
+ * @param {string} details
+ * @returns {string}
+ */
+export function shortLabel(details) {
+  if (!details) return '';
+  const clause = String(details)
+    .split(/[,;:.]/)[0]
+    .trim();
+  return clause.length > 42 ? `${clause.slice(0, 40).trim()}…` : clause;
 }
 
 /**
@@ -138,7 +157,7 @@ export const REASON_INFO = {
     explanation: 'On-site activities cannot run while the member is abroad.',
   },
   'no-provider-available': {
-    label: 'No specialist or coach free',
+    label: 'No specialist',
     explanation: 'No qualifying facilitator had an open slot.',
   },
   'daily-cap-reached': {
@@ -150,7 +169,7 @@ export const REASON_INFO = {
     explanation: 'Required equipment was booked or under maintenance.',
   },
   'venue-unavailable': {
-    label: 'Venue closed or under maintenance',
+    label: 'Venue closed',
     explanation: 'The gym or clinic was unavailable at that time.',
   },
   'member-busy': {
@@ -162,6 +181,27 @@ export const REASON_INFO = {
     explanation: 'The activity was not active on that date.',
   },
 };
+
+/** Human label for a raw skip/fail reason code. */
+export function reasonLabel(reason) {
+  if (!reason) return '';
+  return REASON_INFO[reason]?.label ?? reason;
+}
+
+/**
+ * Build a human-readable substitution note for a backup instance, e.g.
+ * "Swapped for Dumbbell goblet squat — Elyx gym was unavailable".
+ * @param {import('../lib/schemas.js').ScheduledInstance} inst
+ * @param {Map<string, import('../lib/schemas.js').Activity>} activityById
+ * @returns {string}
+ */
+export function substitutionNote(inst, activityById) {
+  if (inst.kind !== 'backup') return '';
+  const backup = inst.backupId ? activityById.get(inst.backupId) : null;
+  const what = backup?.details ?? inst.backupId ?? 'a backup';
+  const why = reasonLabel(inst.reason).toLowerCase();
+  return why ? `Swapped for "${what}": ${why}` : `Swapped for "${what}"`;
+}
 
 /**
  * Group skipped instances by REASON (not activity), each with a plain-language
@@ -175,7 +215,7 @@ export function groupSkippedByReason(plan, activityById) {
   const byReason = new Map();
   for (const inst of plan) {
     if (inst.kind !== 'skipped') continue;
-    const reason = String(inst.note).split(':')[0].trim();
+    const reason = inst.reason || 'unknown';
     if (!byReason.has(reason)) {
       byReason.set(reason, { reason, count: 0, byActivity: new Map() });
     }
@@ -190,6 +230,7 @@ export function groupSkippedByReason(plan, activityById) {
         activityId: inst.activityId,
         type: a?.activityType ?? 'consultation',
         details: a?.details ?? inst.activityId,
+        label: shortLabel(a?.details) || inst.activityId,
         count: 1,
       });
     }

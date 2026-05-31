@@ -1,6 +1,6 @@
 /**
  * @file Single-day event agenda. Shows the day's events (deduped) as a vertical
- * list; routines live in the Daily Protocol panel, not here.
+ * list; routines live in the Daily Routine panel, not here.
  */
 
 import { ActivityBlock } from './ActivityBlock.jsx';
@@ -32,7 +32,7 @@ export function DayView({ day, events, activityById, selectedKey, onSelect }) {
       </header>
       {events.length === 0 ? (
         <p className="py-10 text-center text-sm text-zinc-400 dark:text-zinc-600">
-          No events scheduled. See the Daily Protocol for routine items.
+          No events scheduled. See Self-care for the member's daily items.
         </p>
       ) : (
         <div className="divide-y divide-zinc-100 dark:divide-zinc-800">

@@ -236,8 +236,8 @@ no "member not double-booked" invariant, mirroring the code gap exactly.
 - **Pure aggregation layer (`ui/aggregate.js`) before components.** Building
   splitPlan / dedupeDay / buildDailyProtocol / groupSkipped as pure functions
   with 3-3-3 tests first meant the components stayed dump-and-render. The wall of
-  90 Monday cards became ~26 deduped events + a Daily Protocol panel.
-- **Daily Protocol panel (option b).** A longevity protocol is ~53 distinct daily
+  90 Monday cards became ~26 deduped events + a Daily Routine panel.
+- **Daily Routine panel (option b).** A longevity protocol is ~53 distinct daily
   routines (15 meds, 15 food rules, mobility/breathwork) — realistic in COUNT but
   unreadable as 53×7 cards. Showing it ONCE, grouped by type, with the calendar
   carrying only the day-to-day-varying EVENTS, is the right separation.
@@ -320,13 +320,13 @@ tasks inflated the count beyond what a human experiences.
   dietary principles shown in a panel, never scheduled. Daily routines now ~20.
 - **Skipped by reason (D34):** side panel groups skips by reason with
   plain-language labels + explanations, collapsible. Answers "why so many?".
-- **Daily Protocol accordion (D35):** collapsed-by-type with summary chips.
+- **Daily Routine accordion (D35):** collapsed-by-type with summary chips.
 - **Sampler prompt updated** to encode this realistic modeling, for the future
   one-click in-app sampler (backlogged).
 
 ### Result
 
-104 activities → 3921 primary / 276 backup / 336 skipped. Daily Protocol 44
+104 activities → 3921 primary / 276 backup / 336 skipped. Daily Routine 44
 distinct routines collapsed into a 4-group accordion.
 
 ### Note on units (recurring)
@@ -437,3 +437,207 @@ clean, build OK. Bands verified against real data (sensible AM/PM/EVE splits).
 ### For next iteration
 
 - Hosting (Vercel) + GitHub + prompt docs.
+
+---
+
+## Iteration 14 (2026-05-30): readable substitutions + view-scoped metrics (D39/D40)
+
+User: "'Substituted with act-024 (venue-unavailable)' is unclear; and the
+skipped/metrics should scope to the selected day/week/month, not the 3-mo total."
+
+### D39 — human substitution notes
+
+Scheduler now emits STRUCTURED `reason` (raw FAIL code) + `backupId` on
+instances instead of a baked string. The UI (`substitutionNote` in aggregate.js)
+formats "Swapped for {backup.details} — {plain reason label}". Raw ids/codes no
+longer leak to the user. `groupSkippedByReason` reads `inst.reason` (not a
+parsed note).
+
+### D40 — scope to the view
+
+Skipped instances now carry their intended `day` (they have no window). App
+filters both the summary strip and the skipped panel to the visible range's
+days, so week 1 shows 47 skips (not the whole-horizon 695). Summary `skipped`
+derives from the same scoped set.
+
+### Result
+
+127 tests green (updated groupSkippedByReason fixtures to structured reason;
+added substitutionNote + bandByDayPart coverage within 3-3-3). Lint clean,
+build OK. Verified: week-1 skips scoped correctly, substitution note reads as a
+sentence.
+
+### For next iteration
+
+- Hosting (Vercel) + GitHub + prompt docs.
+
+---
+
+## Iteration 15 (2026-05-30): live workload controls (D41)
+
+User: "let the user modify the daily workload limit and the gap between events in
+real time — this shows the algo actually running."
+
+### What changed
+
+- `schedule(plan, constraints, range, opts)` now takes `{ maxEventsPerDay,
+  eventBufferMin }`, threaded into `tryPlaceOnDay` via a `policy` object
+  (defaults from config.js). Pure + no global mutation.
+- Split `loadData()` (parse once) from scheduling so the app re-runs `schedule()`
+  reactively in a `useMemo` keyed on `policy`.
+- `WorkloadControls` — two sliders (cap 1-12, gap 0-120min); `onChange` updates
+  policy → scheduler re-solves (<200ms full horizon).
+- crash fix carried in: `dedupeDay` now carries `reason`/`backupId`, and
+  `reasonLabel` guards falsy input (fixed the substituted-item detail crash).
+
+### Verified
+
+cap 6→3: primary 4627→4484, skipped 695→926. buffer 30→120min: skipped
+695→838. Re-solve 90-220ms — interactive. 127 tests green (added a policy
+assertion to the schedule cap test), lint clean, build OK.
+
+### For next iteration
+
+- Hosting (Vercel) + GitHub + prompt docs.
+
+---
+
+## Iteration 16 (2026-05-30): resource-binding classifier + Self-care rename
+
+User pushback: cadence-based classification (D30: daily=routine) is brittle on
+real data — a weekly/monthly medication would be a capped EVENT and get
+wrongly skipped, while a daily provider session would dodge contention.
+
+### D43 — classify by RESOURCE-BINDING, not cadence
+
+`isEvent = facilitator != self OR venue location`. Dropped the `period !== 'day'`
+clause. The real reason a med must never be capped isn't that it's daily — it's
+that it needs no scarce resource (no person, no venue). So:
+- self-administered med/meal/home-workout → self-care, never capped, ANY cadence
+- provider- or venue-bound activity → event, contends, ANY cadence
+
+Robust to noisy data (the user's point). The two daily activities that named a
+nominal facilitator (act-062 photo-log, act-046 fiber target) were fixed at the
+DATA level (facilitator → self) rather than papered over by a cadence rule —
+that's the honest fix for the case D30 was patching.
+
+### D44 — rename "Daily Routine" → "Self-care"
+
+Under resource-binding the panel holds non-daily items too (weekly self workout),
+so "Daily Routine" misled. "Self-care" = member-performed, no booking.
+
+### D42 — legend colored text+icon (no dots)
+
+Removed `TYPE_STYLE.dot`; legend/month-cells/protocol-chips use the colored
+type icon + label. Dots weren't decodable (color-blind, 5 muted hues).
+
+### Result
+
+4706 primary / 170 backup / 702 skipped; ZERO medications capped out (the
+invariant the user cared about). 127 tests green, lint clean, build OK.
+
+### For next iteration
+
+- Hosting (Vercel) + GitHub + prompt docs.
+
+---
+
+## Iteration 17 (2026-05-30): de-wall the Self-care + Skipped lists
+
+The two panels rendered the FULL clinical sentence per row ("Brisk outdoor walk,
+30-40 min at 100-120 steps/min, prioritise post-meal timing...") = a wall.
+
+### Fix (taste-skill: long lists need a different component)
+
+- `shortLabel(details)` — first clause, capped at ~42 chars ("Rosuvastatin 10
+  mg", "Barbell back squat"). Full text preserved as a `title` hover tooltip.
+- Self-care expanded groups now render short labels in a 2-COLUMN grid (uses the
+  horizontal space, halves vertical height).
+- Skipped-by-reason items use the short label too (was truncating mid-sentence).
+
+### Result
+
+Glanceable rows, full detail on hover, denser layout. 127 tests green (added
+shortLabel coverage), lint clean, build OK.
+
+### For next iteration
+
+- Hosting (Vercel) + GitHub + prompt docs.
+
+---
+
+## Iteration 18 (2026-05-31): fix weak short-labels at source + label the calendar
+
+User: some short labels read wrong ("When dining out"); fix the og data, and
+apply short labels to the main calendar too.
+
+### Root cause
+
+`shortLabel` extracts the first clause (split on `[,;:.]`). It only reads well
+when `details` LEADS with the activity's name. ~18 food activities (batch-3)
+were authored as imperative guidelines — "When dining out, order...", "Drink
+~2,500 ml...", "Confine all eating...", "Audit the week's intake..." — so the
+first clause was a sentence fragment, not a label. A few others split mid-phrase
+or inside parentheses ("Eat a 150 g serving of oily fish (salmon").
+
+### Fix (at the data source, not the output CSV)
+
+- Prepended a concise "Name:" prefix to each weak `details` in
+  `temp/action_plan_batches/batch-3.json` (shortLabel splits on `:` first):
+  Dining out, Hydration, Time-restricted eating, Fermented food, Olive oil,
+  Plant protein, Protein breakfast, Limit alcohol, Early dinner, Weekly meal
+  planning, Post-workout fuel, Pre-workout fuel, Limit added sugar, Limit
+  ultra-processed, etc. Full guidance is preserved after the colon and shows on
+  hover. Other batches already lead with nouns (med/exercise names) — untouched.
+- `ActivityBlock.jsx` now renders `shortLabel(details)` with the full `details`
+  as a `title` tooltip — so the main calendar matches Self-care + Skipped.
+
+### Why source-edit (recurring principle)
+
+Data content bugs get fixed in the batch JSON and regenerated (`gen:action-plan`
++ `gen:messy`), never by patching `src/data/*.csv` directly — keeps the
+generator the single source of truth.
+
+### Result
+
+104 activities regenerated; calendar/self-care/skipped all show clean glanceable
+labels with full detail on hover. 127 tests green, lint clean, build OK, prettier
+clean.
+
+### For next iteration
+
+- Hosting (Vercel) + GitHub + prompt docs — the last release-gate items.
+
+---
+
+## Iteration 19 (2026-05-31): light-mode activity-type colors (D46)
+
+User: dark mode looks great, but the color scheme isn't good in light mode.
+
+### Root cause
+
+`TYPE_STYLE` had asymmetric light/dark blocks. Dark mode used a clearly-tinted
+fill (`dark:bg-sky-500/10`) + a bright readable label (`dark:text-sky-200`) over
+the near-black canvas — crisp, color-coded chips. Light mode used `bg-sky-50`
+(barely a tint over the white card) + `text-sky-900` (so dark it read as
+near-black, killing the hue). So in light mode the five activity types collapsed
+into near-white cards with black-ish text and lost their color identity / became
+hard to tell apart.
+
+### Fix (D46) — bring light mode to parity
+
+Per type: light fill `-50 → -100` (a visible tint), label `-900 → -800`
+(stays WCAG AA over the `-100` fill but is now visibly the type's hue), ring
+kept at `-200`. Dark mode untouched. The `-100/-800` light pairing already
+matches the app's other light-mode tints (e.g. the amber skipped-count badge),
+so it stays within one palette.
+
+### Result
+
+Light mode now has the same legible, color-coded blocks as dark mode; types are
+distinguishable at a glance. 127 tests green (encoding test asserts non-empty
+block/text, unaffected), lint clean, build OK.
+
+### For next iteration
+
+- Hosting (Vercel) + GitHub + prompt docs — the last release-gate items.

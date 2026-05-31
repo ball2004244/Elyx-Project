@@ -47,13 +47,20 @@ function tryPlaceOnDay(
   anchorMin,
   commit,
   asEvent = isEvent(activity),
+  policy = {
+    maxEventsPerDay: MAX_EVENTS_PER_DAY,
+    eventBufferMin: EVENT_BUFFER_MIN,
+  },
 ) {
   const duration = DURATION_MIN[activity.activityType] ?? 30;
   const event = asEvent;
   let lastFail = FAIL.MEMBER_BUSY;
 
   // Workload cap applies to events only.
-  if (event && index.eventCountOn(`${day}T00:00:00`) >= MAX_EVENTS_PER_DAY) {
+  if (
+    event &&
+    index.eventCountOn(`${day}T00:00:00`) >= policy.maxEventsPerDay
+  ) {
     return { fail: FAIL.DAILY_CAP };
   }
 
@@ -68,7 +75,7 @@ function tryPlaceOnDay(
         lastFail = FAIL.MEMBER_BUSY;
         continue;
       }
-      if (index.eventTooClose(start, end, EVENT_BUFFER_MIN)) {
+      if (index.eventTooClose(start, end, policy.eventBufferMin)) {
         lastFail = FAIL.MEMBER_BUSY;
         continue;
       }
@@ -143,9 +150,15 @@ function tryPlaceOnDay(
  * @param {import('../lib/schemas.js').Activity[]} actionPlan
  * @param {import('../lib/schemas.js').Constraints} constraints
  * @param {{ startDay: string, endDay: string }} range inclusive day bounds
+ * @param {{ maxEventsPerDay?: number, eventBufferMin?: number }} [opts]
+ *   tunable workload policy (defaults from config.js)
  * @returns {import('../lib/schemas.js').ScheduledInstance[]}
  */
-export function schedule(actionPlan, constraints, range) {
+export function schedule(actionPlan, constraints, range, opts = {}) {
+  const policy = {
+    maxEventsPerDay: opts.maxEventsPerDay ?? MAX_EVENTS_PER_DAY,
+    eventBufferMin: opts.eventBufferMin ?? EVENT_BUFFER_MIN,
+  };
   const index = buildResourceIndex(constraints);
   const byId = new Map(actionPlan.map((a) => [a.id, a]));
 
@@ -160,7 +173,15 @@ export function schedule(actionPlan, constraints, range) {
     const placements = targetPlacements(activity, range.startDay, range.endDay);
 
     for (const { day, anchorMin } of placements) {
-      const placed = tryPlaceOnDay(index, activity, day, anchorMin, true);
+      const placed = tryPlaceOnDay(
+        index,
+        activity,
+        day,
+        anchorMin,
+        true,
+        isEvent(activity),
+        policy,
+      );
 
       if (placed.window) {
         plan.push({
@@ -191,6 +212,7 @@ export function schedule(actionPlan, constraints, range) {
           anchorMin,
           true,
           originalIsEvent,
+          policy,
         );
         if (alt.window) {
           plan.push({
@@ -201,7 +223,9 @@ export function schedule(actionPlan, constraints, range) {
             equipmentIds: alt.equipmentIds,
             isRemote: alt.isRemote,
             metrics: activity.metrics,
-            note: `Substituted with ${backup.id} (${placed.fail})`,
+            note: '',
+            reason: placed.fail,
+            backupId: backup.id,
           });
           substituted = true;
           break;
@@ -217,9 +241,10 @@ export function schedule(actionPlan, constraints, range) {
         equipmentIds: [],
         isRemote: false,
         metrics: activity.metrics,
-        note: activity.skipAdjustment
-          ? `${placed.fail}: ${activity.skipAdjustment}`
-          : placed.fail,
+        note: activity.skipAdjustment ?? '',
+        reason: placed.fail,
+        backupId: null,
+        day,
       });
     }
   }

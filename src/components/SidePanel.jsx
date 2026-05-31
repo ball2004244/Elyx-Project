@@ -13,6 +13,7 @@ import { X } from '@phosphor-icons/react/dist/csr/X';
 import { CaretDown } from '@phosphor-icons/react/dist/csr/CaretDown';
 import { TypeIcon } from '../ui/icons.jsx';
 import { TYPE_STYLE, KIND_LABEL, clock } from '../ui/encoding.js';
+import { substitutionNote } from '../ui/aggregate.js';
 
 function DetailRow({ label, value }) {
   if (!value || (Array.isArray(value) && value.length === 0)) return null;
@@ -26,8 +27,10 @@ function DetailRow({ label, value }) {
   );
 }
 
-function SelectedDetail({ instance, activity, onClear }) {
+function SelectedDetail({ instance, activity, activityById, onClear }) {
   const type = activity?.activityType ?? 'consultation';
+  const note =
+    instance.kind === 'backup' ? substitutionNote(instance, activityById) : '';
   return (
     <div>
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -60,10 +63,10 @@ function SelectedDetail({ instance, activity, onClear }) {
         <DetailRow label="Remote" value={instance.isRemote ? 'Yes' : null} />
         <DetailRow label="Metrics" value={instance.metrics} />
       </div>
-      {instance.note ? (
+      {note ? (
         <p className="mt-3 flex gap-2 rounded-lg bg-zinc-100 p-2.5 text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
           <Info size={15} className="mt-px shrink-0" />
-          {instance.note}
+          {note}
         </p>
       ) : null}
     </div>
@@ -93,6 +96,7 @@ export function SidePanel({
         <SelectedDetail
           instance={selected}
           activity={activityById.get(selected.activityId)}
+          activityById={activityById}
           onClear={onClear}
         />
       ) : (
@@ -154,6 +158,7 @@ export function SidePanel({
                           {g.items.slice(0, 8).map((it) => (
                             <li
                               key={it.activityId}
+                              title={it.details}
                               className="flex items-center gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-400"
                             >
                               <TypeIcon
@@ -161,7 +166,7 @@ export function SidePanel({
                                 size={12}
                                 className="shrink-0 opacity-70"
                               />
-                              <span className="truncate">{it.details}</span>
+                              <span className="truncate">{it.label}</span>
                               <span className="ml-auto shrink-0 font-mono text-zinc-400">
                                 ×{it.count}
                               </span>

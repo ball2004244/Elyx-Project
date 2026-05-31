@@ -11,6 +11,8 @@ import {
   bandByDayPart,
   buildDailyProtocol,
   groupSkippedByReason,
+  substitutionNote,
+  shortLabel,
   cadenceLabel,
 } from '../src/ui/aggregate.js';
 
@@ -58,8 +60,36 @@ test('happy: splitPlan separates events from routines', () => {
   expect(routines).toHaveLength(1);
 });
 
-test('happy: cadenceLabel formats frequency', () => {
+test('happy: cadenceLabel and substitutionNote format human strings', () => {
   expect(cadenceLabel({ count: 3, period: 'week' })).toBe('3x / week');
+  // shortLabel takes the first clause and caps length for glanceable rows.
+  expect(shortLabel('Brisk outdoor walk, 30-40 min at 100-120 steps/min')).toBe(
+    'Brisk outdoor walk',
+  );
+  // A "Name: guidance" detail (D45) yields the name as the label.
+  expect(shortLabel('Dining out: order grilled fish with vegetables')).toBe(
+    'Dining out',
+  );
+  expect(shortLabel('')).toBe('');
+  const byId = new Map([
+    ['act-99', activity({ id: 'act-99', details: 'Goblet squat' })],
+  ]);
+  const note = substitutionNote(
+    inst({ kind: 'backup', backupId: 'act-99', reason: 'venue-unavailable' }),
+    byId,
+  );
+  expect(note).toContain('Goblet squat');
+  expect(note).not.toContain('venue-unavailable'); // raw code hidden
+  expect(note.toLowerCase()).toContain('venue');
+  // Survives a dedupeDay round-trip (reason/backupId must be carried through).
+  const [row] = dedupeDay([
+    inst({ kind: 'backup', backupId: 'act-99', reason: 'venue-unavailable' }),
+  ]);
+  expect(substitutionNote(row, byId)).toContain('Goblet squat');
+  // Defensive: a reason-less backup renders without throwing.
+  expect(
+    substitutionNote(inst({ kind: 'backup', backupId: 'act-99' }), byId),
+  ).toBe('Swapped for "Goblet squat"');
 });
 
 test('happy: dedupeDay returns one row for a single instance', () => {
@@ -109,9 +139,9 @@ test('hard: buildDailyProtocol groups distinct routines by type', () => {
 test('hard: groupSkippedByReason groups by reason with counts and items', () => {
   const byId = new Map([['act-1', activity({})]]);
   const plan = [
-    inst({ kind: 'skipped', window: null, note: 'travel-blocked: x' }),
-    inst({ kind: 'skipped', window: null, note: 'travel-blocked: x' }),
-    inst({ kind: 'skipped', window: null, note: 'member-busy: y' }),
+    inst({ kind: 'skipped', window: null, reason: 'travel-blocked' }),
+    inst({ kind: 'skipped', window: null, reason: 'travel-blocked' }),
+    inst({ kind: 'skipped', window: null, reason: 'member-busy' }),
   ];
   const groups = groupSkippedByReason(plan, byId);
   const travel = groups.find((g) => g.reason === 'travel-blocked');

@@ -141,6 +141,12 @@ test('hard: events never overlap on the member timeline and respect the cap', ()
   }
   const busiest = Math.max(...byWeekday);
   expect(busiest).toBeLessThan(eventWins.length * 0.35);
+
+  // Live policy: a stricter daily cap places fewer events / skips more.
+  const tight = schedule(plan, constraints, horizon, { maxEventsPerDay: 2 });
+  const tightEvents = tight.filter((i) => i.window).length;
+  const baseEvents = result.filter((i) => i.window).length;
+  expect(tightEvents).toBeLessThan(baseEvents);
 });
 
 /* ---- Edge: routine exemption, view filter, scale ------------------------ */

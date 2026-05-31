@@ -1,26 +1,26 @@
 /**
- * @file Event vs routine classification (decision D23, refined D30).
+ * @file Event vs self-care classification (decisions D23, D43).
  *
- * EVENT = an appointment-like commitment: resource/venue-bound (a facilitator
- * OR a booked venue) AND at appointment cadence (week / month / year). Events
- * occupy calendar slots, are spaced apart, and count against the daily cap.
+ * EVENT = resource-bound: the activity needs a specific PERSON (facilitator) or
+ * a booked VENUE (Elyx gym / clinic). These occupy an exclusive member slot,
+ * are spaced apart, and count against the daily cap — because the member can't
+ * be two places at once and a provider/room can't host two things at once.
  *
- * ROUTINE = everything else: self-directed activities, AND anything at DAILY
- * cadence (meals, meds, photo-logs, water). Daily items are routine by nature
- * even when a facilitator reviews them asynchronously — you do not book a coach
- * to photograph lunch. Routines are spread but never capped or skipped for load.
+ * SELF-CARE = everything the member performs alone with no scarce resource
+ * (meals, meds, water, home workouts) — at ANY cadence. These are flexible:
+ * spread across the day but never capped or skipped for lack of room. Keying on
+ * resource-binding (not cadence) is robust to noisy data: a self-administered
+ * medication is never an event even if weekly/monthly, so it is never wrongly
+ * capped; a provider-administered treatment is always an event.
  */
 
 const VENUE_VALUES = new Set(['elyx gym', 'elyx clinic']);
 
 /**
  * @param {import('../lib/schemas.js').Activity} activity
- * @returns {boolean} true if the activity is a calendar EVENT.
+ * @returns {boolean} true if the activity is a resource-bound EVENT.
  */
 export function isEvent(activity) {
-  // Daily-cadence activities are routines regardless of a nominal facilitator.
-  if (activity.frequency.period === 'day') return false;
-
   if (activity.facilitator.type !== 'self') return true;
   const loc = (activity.location ?? '').trim().toLowerCase();
   return VENUE_VALUES.has(loc);

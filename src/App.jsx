@@ -1,13 +1,15 @@
 /**
  * @file Elyx Resource Allocator — calendar app root.
  * Loads data + runs the scheduler once, splits events (calendar) from routines
- * (Daily Protocol), and renders Day / Week / Month views with a grouped skipped
+ * (Daily Routine), and renders Day / Week / Month views with a grouped skipped
  * panel.
  */
 
 import { useMemo, useState } from 'react';
-import { loadAll } from './lib/loadData.js';
+import { loadData } from './lib/loadData.js';
+import { schedule } from './scheduler/schedule.js';
 import { groupByDay, weekRange, monthBounds } from './scheduler/index.js';
+import { MAX_EVENTS_PER_DAY, EVENT_BUFFER_MIN } from './scheduler/config.js';
 import { toMs, dayKey, eachDay } from './scheduler/intervals.js';
 import {
   splitPlan,
@@ -23,6 +25,7 @@ import { WeekGrid } from './components/WeekGrid.jsx';
 import { DayView } from './components/DayView.jsx';
 import { MonthGrid } from './components/MonthGrid.jsx';
 import { DailyProtocol } from './components/DailyProtocol.jsx';
+import { WorkloadControls } from './components/WorkloadControls.jsx';
 import { SidePanel } from './components/SidePanel.jsx';
 import { Legend } from './components/Legend.jsx';
 import { useTheme } from './ui/useTheme.js';
@@ -35,13 +38,25 @@ const clamp = (day, lo, hi) => (day < lo ? lo : day > hi ? hi : day);
 
 export default function App() {
   const [theme, toggleTheme] = useTheme();
-  const data = useMemo(() => loadAll(), []);
-  const { plan, horizon, activityById } = data;
+  // Parse the CSVs once; the scheduler re-runs when the policy changes.
+  const data = useMemo(() => loadData(), []);
+  const { horizon, activityById } = data;
+
+  const [policy, setPolicy] = useState({
+    maxEventsPerDay: MAX_EVENTS_PER_DAY,
+    eventBufferMin: EVENT_BUFFER_MIN,
+  });
   const [mode, setMode] = useState('week');
   const [anchor, setAnchor] = useState(horizon.startDay);
   const [selected, setSelected] = useState(null);
 
-  // Static view models (computed once from the full plan).
+  // Re-run the scheduler whenever the workload policy changes (<200ms).
+  const plan = useMemo(
+    () => schedule(data.activities, data.constraints, horizon, policy),
+    [data, horizon, policy],
+  );
+
+  // Static view models (computed from the current plan).
   const { events } = useMemo(
     () => splitPlan(plan, activityById),
     [plan, activityById],
@@ -51,9 +66,9 @@ export default function App() {
       buildDailyProtocol(splitPlan(plan, activityById).routines, activityById),
     [plan, activityById],
   );
-  const skippedByReason = useMemo(
-    () => groupSkippedByReason(plan, activityById),
-    [plan, activityById],
+  const allSkipped = useMemo(
+    () => plan.filter((i) => i.kind === 'skipped'),
+    [plan],
   );
   const eventsByDayAll = useMemo(() => groupByDay(events), [events]);
 
@@ -74,6 +89,15 @@ export default function App() {
     return map;
   }, [eventsByDayAll, range]);
 
+  // Skipped instances scoped to the visible range (by their intended day),
+  // grouped by reason.
+  const skippedByReason = useMemo(() => {
+    const inRange = allSkipped.filter(
+      (i) => i.day && i.day >= range.startDay && i.day <= range.endDay,
+    );
+    return groupSkippedByReason(inRange, activityById);
+  }, [allSkipped, range, activityById]);
+
   // Summary counts for the visible range.
   const summary = useMemo(() => {
     let placed = 0;
@@ -81,8 +105,9 @@ export default function App() {
     for (const items of eventsByDay.values()) {
       for (const e of items) e.kind === 'backup' ? backup++ : placed++;
     }
-    return { placed, backup };
-  }, [eventsByDay]);
+    const skipped = skippedByReason.reduce((n, g) => n + g.count, 0);
+    return { placed, backup, skipped };
+  }, [eventsByDay, skippedByReason]);
 
   const step = mode === 'day' ? 1 : mode === 'month' ? 0 : 7;
   const canPrev = anchor > horizon.startDay;
@@ -144,7 +169,7 @@ export default function App() {
           <SummaryStrip
             placed={summary.placed}
             backup={summary.backup}
-            skipped={skippedByReason.reduce((n, g) => n + g.count, 0)}
+            skipped={summary.skipped}
           />
           <Legend />
         </div>
@@ -186,12 +211,22 @@ export default function App() {
             <DailyProtocol protocol={protocol} />
           </div>
 
-          <SidePanel
-            selected={selected}
-            activityById={activityById}
-            skippedByReason={skippedByReason}
-            onClear={() => setSelected(null)}
-          />
+          <div className="flex flex-col gap-5">
+            <WorkloadControls
+              maxEventsPerDay={policy.maxEventsPerDay}
+              eventBufferMin={policy.eventBufferMin}
+              onChange={(next) => {
+                setPolicy(next);
+                setSelected(null);
+              }}
+            />
+            <SidePanel
+              selected={selected}
+              activityById={activityById}
+              skippedByReason={skippedByReason}
+              onClear={() => setSelected(null)}
+            />
+          </div>
         </div>
       </main>
     </div>

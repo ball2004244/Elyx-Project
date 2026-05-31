@@ -1,6 +1,7 @@
 /**
- * @file Fixed activity-type legend. Documents the color encoding so users can
- * read the calendar at a glance (no decorative dots elsewhere — only here).
+ * @file Fixed activity-type legend. Each entry shows the type's color dot (as
+ * used in the Month view) AND its icon (as used in Week/Day blocks), so both
+ * encodings are decodable at a glance.
  */
 
 import { TYPE_STYLE, TYPE_ORDER } from '../ui/encoding.js';
@@ -12,9 +13,9 @@ export function Legend() {
       {TYPE_ORDER.map((type) => (
         <span
           key={type}
-          className="inline-flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400"
+          className={`inline-flex items-center gap-1.5 text-xs font-medium ${TYPE_STYLE[type].text}`}
         >
-          <TypeIcon type={type} size={14} className="opacity-80" />
+          <TypeIcon type={type} size={14} />
           {TYPE_STYLE[type].label}
         </span>
       ))}

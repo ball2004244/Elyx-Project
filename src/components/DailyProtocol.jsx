@@ -1,7 +1,8 @@
 /**
- * @file The Daily Protocol panel: the member's constant routine, grouped by
- * type as a COLLAPSIBLE accordion (collapsed by default). The header shows
- * summary chips so the whole protocol reads as one glanceable line until a
+ * @file The Self-care panel: the member's self-performed items (meds, meals,
+ * water, home workouts — no booked person or venue), grouped by type as a
+ * COLLAPSIBLE accordion (collapsed by default). The header shows summary chips
+ * so the whole list reads as one glanceable line until a
  * group is expanded.
  */
 
@@ -23,7 +24,7 @@ export function DailyProtocol({ protocol }) {
       <header className="flex flex-wrap items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
         <CheckCircle size={18} className="text-teal-600 dark:text-teal-400" />
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          Daily Protocol
+          Self-care
         </h2>
         <span className="font-mono text-xs text-zinc-400">{total}</span>
         <div className="ml-auto flex flex-wrap gap-1.5">
@@ -32,8 +33,10 @@ export function DailyProtocol({ protocol }) {
               key={g.type}
               className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
             >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${TYPE_STYLE[g.type].dot}`}
+              <TypeIcon
+                type={g.type}
+                size={12}
+                className={TYPE_STYLE[g.type].text}
               />
               {TYPE_STYLE[g.type].label}
               <span className="font-mono">{g.items.length}</span>
@@ -69,13 +72,14 @@ export function DailyProtocol({ protocol }) {
                 />
               </button>
               {isOpen ? (
-                <ul className="flex flex-col gap-1.5 px-4 pb-3 pl-11">
+                <ul className="grid grid-cols-1 gap-x-6 gap-y-1 px-4 pb-3 pl-11 sm:grid-cols-2">
                   {group.items.map((it) => (
                     <li
                       key={it.id}
-                      className="flex items-start justify-between gap-2 text-[13px] leading-snug text-zinc-700 dark:text-zinc-300"
+                      title={it.details}
+                      className="flex items-baseline justify-between gap-2 text-[13px] leading-snug text-zinc-700 dark:text-zinc-300"
                     >
-                      <span>{it.details}</span>
+                      <span className="truncate">{it.label}</span>
                       <span className="shrink-0 font-mono text-[11px] text-zinc-400">
                         {it.cadence}
                       </span>

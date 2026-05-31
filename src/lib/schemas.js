@@ -240,6 +240,12 @@ export const ScheduledInstance = z.object({
   isRemote: z.boolean().default(false),
   metrics: z.array(z.string()).default([]),
   note: z.string().default(''), // skip-adjustment or substitution reason
+  /** Raw failure reason code (see scheduler FAIL) for backup/skipped instances. */
+  reason: z.string().default(''),
+  /** For a backup placement: the substitute activity's id. */
+  backupId: z.string().nullable().default(null),
+  /** Intended day ("YYYY-MM-DD") for a skipped instance (it has no window). */
+  day: z.string().nullable().default(null),
 });
 
 /** The Personalized Plan = list of scheduled instances. */

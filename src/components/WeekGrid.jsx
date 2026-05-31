@@ -1,7 +1,7 @@
 /**
  * @file The week view: 7 day columns, each an agenda list of that day's EVENTS
  * (deduped — repeats of the same activity collapse into one row with ×N).
- * Routines are not shown here; they live in the Daily Protocol panel.
+ * Routines are not shown here; they live in the Daily Routine panel.
  */
 
 import { eachDay } from '../scheduler/intervals.js';

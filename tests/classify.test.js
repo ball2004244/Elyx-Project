@@ -1,6 +1,7 @@
 /**
- * Tests for event vs routine classification (src/scheduler/classify.js).
- * Structured by the 3-3-3 rule: 3 happy, 3 hard, 3 edge.
+ * Tests for event vs self-care classification (src/scheduler/classify.js).
+ * Classification is by RESOURCE-BINDING (needs a person/venue), independent of
+ * cadence. Structured by the 3-3-3 rule: 3 happy, 3 hard, 3 edge.
  * Run: bun test
  */
 
@@ -50,17 +51,17 @@ test('hard: gym venue makes a self weekly activity an event', () => {
   expect(isEvent(make({ location: 'Elyx gym' }))).toBe(true);
 });
 
-test('hard: a DAILY facilitated activity is a routine, not an event', () => {
-  // Async-reviewed daily logs (e.g. photo-log a meal) are routines even though
-  // a coach is named — you do not book the coach to photograph lunch.
+test('hard: a DAILY facilitated activity is an event (resource-bound)', () => {
+  // Cadence-independent: a daily session that needs a provider still contends
+  // for a slot. (Self-administered daily logs should be modeled as self.)
   expect(
     isEvent(
       make({
         frequency: { count: 3, period: 'day' },
-        facilitator: { type: 'alliedHealth', role: 'health coach' },
+        facilitator: { type: 'alliedHealth', role: 'physiotherapist' },
       }),
     ),
-  ).toBe(false);
+  ).toBe(true);
 });
 
 /* ---- Edge: casing / empty / daily venue --------------------------------- */
@@ -73,10 +74,14 @@ test('edge: empty location with self facilitator is a routine', () => {
   expect(isEvent(make({ location: '' }))).toBe(false);
 });
 
-test('edge: a daily activity at a venue is still a routine', () => {
+test('edge: a self-administered activity is self-care at ANY cadence', () => {
+  // A weekly/monthly self med must NOT be an event (never wrongly capped).
   expect(
     isEvent(
-      make({ frequency: { count: 1, period: 'day' }, location: 'Elyx gym' }),
+      make({ frequency: { count: 1, period: 'month' }, location: 'home' }),
     ),
+  ).toBe(false);
+  expect(
+    isEvent(make({ frequency: { count: 1, period: 'day' }, location: 'home' })),
   ).toBe(false);
 });

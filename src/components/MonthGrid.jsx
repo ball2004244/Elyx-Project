@@ -1,10 +1,11 @@
 /**
  * @file Month overview: a calendar grid where each day cell shows its event
- * count and a type-colored dot row. Clicking a day drills into the Day view.
+ * count and a row of type-colored icons. Clicking a day drills into Day view.
  */
 
 import { eachDay, weekday } from '../scheduler/intervals.js';
 import { TYPE_STYLE } from '../ui/encoding.js';
+import { TypeIcon } from '../ui/icons.jsx';
 
 const WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -71,9 +72,11 @@ export function MonthGrid({
                 <span className="mt-auto flex items-center gap-1">
                   <span className="flex gap-0.5">
                     {dotTypes.map((t) => (
-                      <span
+                      <TypeIcon
                         key={t}
-                        className={`h-1.5 w-1.5 rounded-full ${TYPE_STYLE[t]?.dot ?? 'bg-zinc-400'}`}
+                        type={t}
+                        size={12}
+                        className={TYPE_STYLE[t]?.text ?? 'text-zinc-400'}
                       />
                     ))}
                   </span>

@@ -8,6 +8,7 @@ import { ArrowsClockwise } from '@phosphor-icons/react/dist/csr/ArrowsClockwise'
 import { VideoCamera } from '@phosphor-icons/react/dist/csr/VideoCamera';
 import { TypeIcon } from '../ui/icons.jsx';
 import { TYPE_STYLE, KIND_LABEL, clock } from '../ui/encoding.js';
+import { shortLabel } from '../ui/aggregate.js';
 
 /**
  * @param {{
@@ -21,6 +22,8 @@ export function ActivityBlock({ instance, activity, selected, onSelect }) {
   const type = activity?.activityType ?? 'consultation';
   const style = TYPE_STYLE[type];
   const isBackup = instance.kind === 'backup';
+  const label =
+    shortLabel(activity?.details) || activity?.id || instance.activityId;
 
   return (
     <button
@@ -57,8 +60,11 @@ export function ActivityBlock({ instance, activity, selected, onSelect }) {
           />
         ) : null}
       </div>
-      <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug">
-        {activity?.details || activity?.id || instance.activityId}
+      <p
+        className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug"
+        title={activity?.details || undefined}
+      >
+        {label}
       </p>
     </button>
   );

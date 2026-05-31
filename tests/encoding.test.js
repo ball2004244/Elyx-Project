@@ -37,7 +37,7 @@ test('hard: every activity type has a complete style entry and TYPE_ORDER matche
     expect(s).toBeDefined();
     expect(typeof s.label).toBe('string');
     expect(s.block.length).toBeGreaterThan(0);
-    expect(s.dot.length).toBeGreaterThan(0);
+    expect(s.text.length).toBeGreaterThan(0);
   }
   expect([...TYPE_ORDER].sort()).toEqual([
     'consultation',

@@ -9,6 +9,10 @@ export const MAX_EVENTS_PER_DAY = 6;
 /** Minimum gap (minutes) required between two consecutive events. */
 export const EVENT_BUFFER_MIN = 30;
 
+/** UI slider bounds for the live workload controls. */
+export const MAX_EVENTS_RANGE = { min: 1, max: 12 };
+export const EVENT_BUFFER_RANGE = { min: 0, max: 120, step: 15 };
+
 /** Active day window for placing activities (minutes from midnight). */
 export const DAY_START_MIN = 6 * 60; // 06:00
 export const DAY_END_MIN = 21 * 60; // 21:00

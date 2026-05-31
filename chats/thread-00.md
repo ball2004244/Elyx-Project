@@ -146,11 +146,11 @@ Agent: Explained both trace to the UI rework not being done yet (scheduler is no
 
 User: rework the UI. is 64 per day or total? too many or ok?
 
-Agent: 64 is per-day (Monday): 64 instances from 53 distinct routine activities (eye-exercise 8x/day + a few 2-3x/day inflate it). Verdict: ~53 distinct daily items is REALISTIC for concierge longevity (15 meds, 15 food rules, mobility), not bloat — but 64 cards is too many to DISPLAY. Fix is presentation (Daily Protocol panel + ×N collapse), not trimming data. Flagged act-030 (8x/day) as arguably an all-day reminder (backlog). Recommended option (b): single Daily Protocol panel since the protocol is ~constant across the week.
+Agent: 64 is per-day (Monday): 64 instances from 53 distinct routine activities (eye-exercise 8x/day + a few 2-3x/day inflate it). Verdict: ~53 distinct daily items is REALISTIC for concierge longevity (15 meds, 15 food rules, mobility), not bloat — but 64 cards is too many to DISPLAY. Fix is presentation (Daily Routine panel + ×N collapse), not trimming data. Flagged act-030 (8x/day) as arguably an all-day reminder (backlog). Recommended option (b): single Daily Routine panel since the protocol is ~constant across the week.
 
 User: love idea b. also the skipped list isn't deduped or organized.
 
-Agent: Recorded D26-D29. Built pure `ui/aggregate.js` (splitPlan / dedupeDay → ×N / buildDailyProtocol grouped-by-type / groupSkipped → ×count+reasons) with 3-3-3 tests. New components: ViewSwitcher (Day/Week/Month), DailyProtocol panel, MonthGrid (event counts + type dots, click→day), DayView; reworked WeekGrid (deduped events only), SidePanel (grouped skipped), Topbar (range label per mode + switcher). App.jsx drives view mode + anchor. Fixed misleading header (now "Jun 1 - 7" etc). Result: 90-card Monday → ~26 deduped events + Daily Protocol (53 items grouped) + grouped skipped. Lint clean (moved pure helper out of component file), build OK, suite 117→126 green, dev render verified.
+Agent: Recorded D26-D29. Built pure `ui/aggregate.js` (splitPlan / dedupeDay → ×N / buildDailyProtocol grouped-by-type / groupSkipped → ×count+reasons) with 3-3-3 tests. New components: ViewSwitcher (Day/Week/Month), DailyProtocol panel, MonthGrid (event counts + type dots, click→day), DayView; reworked WeekGrid (deduped events only), SidePanel (grouped skipped), Topbar (range label per mode + switcher). App.jsx drives view mode + anchor. Fixed misleading header (now "Jun 1 - 7" etc). Result: 90-card Monday → ~26 deduped events + Daily Routine (53 items grouped) + grouped skipped. Lint clean (moved pure helper out of component file), build OK, suite 117→126 green, dev render verified.
 
 ---
 
@@ -164,9 +164,9 @@ Agent: Clarified units: 114 activities are recurring RULES; expanded over the ho
 
 ---
 
-User: 59 daily protocol still overwhelming; skipped list is long + not grouped (only x69/x59); what does the PDF's 100 activities mean — 100 spanning 3 months?
+User: 59 Daily Routine still overwhelming; skipped list is long + not grouped (only x69/x59); what does the PDF's 100 activities mean — 100 spanning 3 months?
 
-Agent: Clarified PDF "100 activities" = 100 RULES in the action plan (each expands over 3 months by frequency), NOT 100 instances. Proposed: Daily Protocol accordion (collapsed, summary chips) + regroup skipped BY REASON (with explanations) instead of by activity. User agreed group-by-reason.
+Agent: Clarified PDF "100 activities" = 100 RULES in the action plan (each expands over 3 months by frequency), NOT 100 instances. Proposed: Daily Routine accordion (collapsed, summary chips) + regroup skipped BY REASON (with explanations) instead of by activity. User agreed group-by-reason.
 
 User: data activities fine but sampled frequencies feel unrealistic — 59 daily routines, is that fact-based?
 
@@ -201,5 +201,45 @@ User: should we leave space for no-work blocks (like a calendar)? why is adheren
 Agent: Diagnosed adherence as a scope-mismatch BUG: placed/backup were windowed (events only) while skipped was whole-horizon → shrinks with the window. It also excluded routines and conflated "skipped" (planning) with member behavior. Confirmed the PDF does NOT require an adherence %. Recommended dropping it + adding morning/afternoon/evening bands (not a full hour-grid, which reintroduces the whitespace we avoided in D19). User: drop adherence, do the bands.
 
 Agent: Recorded D37 (drop adherence) + D38 (day-part bands). Removed the adherence calc from SummaryStrip. Added `dayPart` (boundaries 12:00/17:00) + `bandByDayPart` helper; WeekGrid and DayView now render Morning/Afternoon/Evening bands with "Open" for empty bands. Folded band coverage into existing encoding/aggregate tests to stay 3-3-3 (127 green). Lint clean, build OK, bands verified on real data. Updated Implement/Lessons.
+
+---
+
+User: 2 UX fixes — (1) "Substituted with act-024 (venue-unavailable)" is unclear (raw id + code), (2) skipped items + metrics must scope to the day/week/month selection, not always the 3-month total.
+
+Agent: D39: scheduler now emits structured `reason` + `backupId` (not a baked string); UI `substitutionNote` formats "Swapped for {backup details} — {plain reason}". D40: skipped instances carry intended `day`; App scopes both summary strip and skipped-by-reason panel to the visible range. Updated ScheduledInstance schema (+reason/backupId/day), groupSkippedByReason to read inst.reason, SidePanel to format the note. Verified: week-1 shows 47 skips (was showing 695), note reads as a sentence. Updated tests (structured fixtures + substitutionNote/bandByDayPart coverage), kept 3-3-3; 127 green, lint clean, build OK.
+
+---
+
+User: [substituted-item click crash] + can we let the user modify the daily workload limit and gap-between-events in real time, to show the algo running?
+
+Agent: Fixed the crash first — `dedupeDay` wasn't carrying `reason`/`backupId` onto the collapsed row, so `substitutionNote` got undefined; carried them through + made `reasonLabel` defensive (the CSP/contentScript errors were a browser extension, not the app). Then D41: threaded `{maxEventsPerDay, eventBufferMin}` opts through `schedule()` → `tryPlaceOnDay` policy; split `loadData()` (parse once) from scheduling so the app re-solves reactively; added `WorkloadControls` (two sliders) that re-run the scheduler live (<200ms). Verified the knobs measurably shift outcomes (cap 6→3: skipped 695→926; buffer 30→120: 695→838). Added a policy regression assertion. 127 tests green, lint clean, build OK; dev render verified.
+
+---
+
+User: the sliders are laggy; debounce them (or a UX resolver), and move them to the right column with the skipped occurrences.
+
+Agent: Fixed lag by decoupling display from compute: WorkloadControls now holds a local `draft` so the thumb tracks instantly, and the expensive full-horizon re-solve is debounced 200ms (fires once on pause, not per pixel). Dropped a sync-effect that caused cascading renders (lint flagged it) — the slider drives both draft and parent so no syncing needed. Moved the controls into the right column above the SidePanel (with the skipped panel). 127 tests green, lint clean, build OK.
+
+---
+
+User: [legend] colored text + icon, remove dot. [routine] weekly things aren't really "routine"; what if we remove isEvent (sliders prevent the wall)? but cadence won't work for non-daily meds — code must handle noisy/tricky real data. what is resource-binding? rename Daily Routine? → agree on Self-care.
+
+Agent: Explained removing isEvent breaks either way (cap only applies to events → mass medication-skipping, OR sliders dead + wall). The robust signal isn't cadence — it's RESOURCE-BINDING: does the activity need a scarce PERSON or VENUE? Adopted D43: `isEvent = facilitator != self OR venue`, dropped the cadence clause — so a self med is never capped at ANY frequency (the user's noisy-data concern), a provider/venue activity always contends. Fixed the 2 daily activities that named nominal facilitators (act-062, act-046) at the DATA level (→ self), which is the honest fix for what D30 had patched. D42: legend/month/protocol now colored icon+text, removed `dot`. D44: renamed panel "Daily Routine" → "Self-care". Verified: 4706 primary / 170 backup / 702 skipped, ZERO medications capped out. 127 tests green (updated classify tests to assert cadence-independence), lint clean, build OK.
+
+---
+
+User: self-care and skipped list are now walls of text — improve the UI/UX.
+
+Agent: Root cause: both panels printed the full clinical sentence per row. Added `shortLabel(details)` (first clause, capped ~42 chars, e.g. "Rosuvastatin 10 mg") with the full text preserved as a hover `title`. Self-care expanded items now render short labels in a 2-column grid (uses horizontal space, halves height); skipped-by-reason items use the short label too (was truncating mid-sentence). 127 tests green (added shortLabel coverage), lint clean, build OK.
+
+---
+User: that look better, but some entries, such as "When dining out" is wrong content-ly. probably modify the og data? and, do the same for the main calendar too.
+
+Agent: Two parts. (1) Content fix at SOURCE: `shortLabel` takes the first clause, but ~18 food activities in batch-3.json were written as imperative guidelines ("When dining out, order...", "Drink ~2,500 ml...", "Audit the week's intake...") so the first clause was a fragment, not a name. Prepended a concise "Name:" prefix to each `details` (shortLabel splits on `:` first), yielding clean labels (Dining out, Hydration, Time-restricted eating, Limit alcohol, Weekly meal planning, ...) while the full guidance still shows on hover. Also de-fragmented several comma-first food rows (act-041/043/045/050/055/056/059/062) whose first clause split mid-phrase or inside parentheses. The other batches (fitness/medication/therapy/consultation) already lead with concrete nouns, so no edits needed. Regenerated action_plan.csv (104 activities) + messy_sample.csv. (2) Main calendar: `ActivityBlock.jsx` rendered the full `details`; switched it to `shortLabel(details)` with the full text as a `title` hover — same treatment as Self-care/Skipped, so all three surfaces are now consistent. 127 tests green, lint clean, build OK, prettier clean.
+
+---
+User: 1 last ui touch before submit. dark mode look great, but this color scheme not gud in light mode.
+
+Agent: Root cause was an asymmetric `TYPE_STYLE`: dark mode used a tinted fill (`dark:bg-sky-500/10`) + bright label (`dark:text-sky-200`) = crisp color-coded chips, but light mode used `bg-sky-50` (barely a tint) + `text-sky-900` (so dark it read near-black) — so the 5 activity types washed out into near-white cards with black-ish text and lost their color identity. Fix (D46): per type, bumped the light fill `-50 → -100` (visible tint) and the label `-900 → -800` (still WCAG AA over the fill but now visibly the type's hue); kept the ring at `-200`; left dark mode untouched. `-100/-800` matches the app's other light-mode tints so it stays one palette. 127 tests green, lint clean, build OK. Updated DECISIONS (D46) + Lessons (iter 19).
 
 ---

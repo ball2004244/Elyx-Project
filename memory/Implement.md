@@ -26,8 +26,9 @@ src/data/*.csv (static)
 Single-screen calendar app (taste-skill dials VARIANCE 3 / MOTION 3 / DENSITY 6
 — product UI, not a landing page). Day / Week / Month views.
 
-- `lib/loadData.js` — imports the 5 CSVs via Vite `?raw`, parses + validates,
-  runs `schedule()` over the full horizon, returns plan + activityById + errors.
+- `lib/loadData.js` — `loadData()` parses + validates the CSVs once (no
+  scheduling); the app re-runs `schedule()` reactively when the policy changes.
+  `loadAll(opts)` is a convenience that loads + schedules in one call.
 - `ui/aggregate.js` — pure view-model layer: `splitPlan` (events vs routines),
   `dedupeDay` (collapse same-activity repeats → ×N), `buildDailyProtocol` (group
   routines by type, deduped, excludes guidelines), `groupSkippedByReason` (group
@@ -45,8 +46,13 @@ Single-screen calendar app (taste-skill dials VARIANCE 3 / MOTION 3 / DENSITY 6
 - `components/DayView` — single-day event agenda.
 - `components/MonthGrid` — month overview, event count + type dots per day,
   click drills into Day.
-- `components/DailyProtocol` — the constant routine, accordion-by-type
-  (collapsed by default) + summary chips (decision D35).
+- `components/DailyProtocol` — the **Self-care** panel (member-performed items,
+  no booked person/venue), accordion-by-type, collapsed by default + colored
+  icon chips (D35/D44).
+- `components/WorkloadControls` — live sliders for `maxEventsPerDay` +
+  `eventBufferMin` (right column, above the SidePanel); the thumb tracks
+  instantly while the full re-solve is debounced (200ms) so dragging stays
+  smooth (D41).
 - `components/GuidelinesPanel` — standing dietary/lifestyle principles
   (track='guideline'), shown for reference, never scheduled.
 - `components/ActivityBlock` — one event; type color, ×N badge, dashed backup,
@@ -56,7 +62,7 @@ Single-screen calendar app (taste-skill dials VARIANCE 3 / MOTION 3 / DENSITY 6
 - `App.jsx` — loads, splits events/routines, drives view mode + anchor + range.
 
 Result: the 90-card Monday wall becomes ~26 deduped event cards on the calendar
-+ a Daily Protocol panel (53 routine items grouped by type) + a grouped skipped
++ a Daily Routine panel (53 routine items grouped by type) + a grouped skipped
 list. Build ~470 KB JS (gzip ~123 KB), dominated by bundled CSV data.
 
 ## Scheduler (src/scheduler/) — built
@@ -65,9 +71,10 @@ Pure, framework-free modules; `src/` never imports `scripts/`.
 
 - `intervals.js` — tz-free ISO datetime math; half-open `overlaps`, `contains`,
   `eachDay`, `weekday`, `isoAtMinutes`, `addMinutes`.
-- `classify.js` — `isEvent`: facilitator != self OR venue in {Elyx gym, clinic}.
-  Events get slots/spacing/cap; routines (self + home/outdoor) are spread but
-  uncapped/unbuffered (capping these would wrongly skip meals/meds).
+- `classify.js` — `isEvent`: RESOURCE-BINDING (facilitator != self OR venue in
+  {gym, clinic}), cadence-independent (D43). Events contend for slots + count
+  against the cap; self-care (member-performed, no scarce resource) never does,
+  at ANY frequency — so a self-administered med is never wrongly capped.
 - `config.js` — MAX_EVENTS_PER_DAY (6), EVENT_BUFFER_MIN (30), day window, grid.
 - `resourceIndex.js` — day-bucketed lookups; member booking (capacity 1, events
   only), event buffer + per-day count, equipment/provider booking, role-based
@@ -78,7 +85,8 @@ Pure, framework-free modules; `src/` never imports `scripts/`.
 - `schedule.js` — engine: classify event vs routine; events occupy the member
   exclusively + buffered + capped; routines are spread checklist items that do
   not contend; book → backup fallback → skip with reason. `effectiveUntil` is an
-  exclusive midnight boundary.
+  exclusive midnight boundary. Takes `opts` ({maxEventsPerDay, eventBufferMin})
+  so the UI can re-solve live (D41).
 - `index.js` — `deriveHorizon`, `filterToRange`, `groupByDay`, `weekRange`.
 
 Real-data run (full 3-month horizon): 5884 instances — 4869 primary, 565 backup,

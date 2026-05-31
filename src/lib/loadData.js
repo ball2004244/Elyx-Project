@@ -19,17 +19,17 @@ import { schedule } from '../scheduler/schedule.js';
 import { deriveHorizon } from '../scheduler/index.js';
 
 /**
- * Load data, validate, and run the scheduler once.
+ * Parse + validate the static CSVs (no scheduling). Call once; the scheduler is
+ * re-run separately whenever workload options change.
  * @returns {{
  *   activities: import('./schemas.js').Activity[],
  *   constraints: import('./schemas.js').Constraints,
- *   plan: import('./schemas.js').ScheduledInstance[],
  *   horizon: { startDay: string, endDay: string },
  *   loadErrors: { row: number, id: string, message: string }[],
  *   activityById: Map<string, import('./schemas.js').Activity>,
  * }}
  */
-export function loadAll() {
+export function loadData() {
   const { activities, errors: loadErrors } = loadActivities(
     parseCsv(actionPlanCsv),
   );
@@ -42,8 +42,17 @@ export function loadAll() {
   });
 
   const horizon = deriveHorizon(constraints);
-  const plan = schedule(activities, constraints, horizon);
   const activityById = new Map(activities.map((a) => [a.id, a]));
 
-  return { activities, constraints, plan, horizon, loadErrors, activityById };
+  return { activities, constraints, horizon, loadErrors, activityById };
+}
+
+/**
+ * Load data and run the scheduler once (convenience for tests / scripts).
+ * @param {{ maxEventsPerDay?: number, eventBufferMin?: number }} [opts]
+ */
+export function loadAll(opts = {}) {
+  const data = loadData();
+  const plan = schedule(data.activities, data.constraints, data.horizon, opts);
+  return { ...data, plan };
 }
