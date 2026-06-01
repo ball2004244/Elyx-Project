@@ -25,7 +25,7 @@ function Slider({ label, value, min, max, step = 1, suffix, onInput }) {
         step={step}
         value={value}
         onChange={(e) => onInput(Number(e.target.value))}
-        className="h-1 flex-1 cursor-pointer accent-teal-600 dark:accent-teal-400"
+        className="h-1 min-w-0 flex-1 cursor-pointer accent-teal-600 dark:accent-teal-400"
       />
       <span className="w-14 shrink-0 text-right font-mono tabular-nums text-zinc-900 dark:text-zinc-100">
         {value}

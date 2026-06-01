@@ -842,3 +842,31 @@ grouped items), so it's unit-testable without React.
 +9 3-3-3 tests (remoteLabel + skip-adjustment carry/fallback) → 190 green, lint
 clean, build OK, prettier clean. All 10 PDF activity fields now represented in
 the UI.
+
+
+## Iteration 24 (2026-05-31): Chrome-only slider overflow (flex min-width:auto)
+
+User screenshot: WorkloadControls value labels ("6", "30 min") clipped past the
+card's right edge — on Chrome, not Firefox.
+
+### Root cause
+
+Slider row = flex line `[label w-28][input flex-1][value w-14]`. Flex items
+default to `min-width:auto`, so they won't shrink below their intrinsic minimum.
+Chrome/WebKit give a native `<input type="range">` a built-in intrinsic minimum
+width; Firefox lets it collapse. In the 20rem (`lg:w-80`) right column there
+wasn't enough room for Chrome's minimum, so the input refused to shrink, the row
+overflowed the bordered card, and the value span was pushed past the edge.
+
+### Fix
+
+`min-w-0` on the range input (overrides `min-width:auto`) so it shrinks to fill
+the leftover space; the `shrink-0` label + value keep fixed widths. CSS-only,
+build clean.
+
+### Principle
+
+Any flex child that should shrink (text that truncates, a fluid track, a `flex-1`
+element next to fixed siblings) needs `min-w-0` — `min-width:auto` is the default
+cause of "my flex layout overflows its container," and it reproduces differently
+per browser because intrinsic minimums differ.
