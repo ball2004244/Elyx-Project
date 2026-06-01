@@ -795,3 +795,50 @@ missing index → raw id) keep a sampled/edited plan from ever crashing the pane
 Facilitator reads "Daniel Kim · personal trainer", equipment shows names. +9
 3-3-3 tests (buildResourceIndex / facilitatorLabel / equipmentLabels) → 181
 green, lint clean, build OK.
+
+
+## Iteration 23 (2026-05-31): surface the full PDF activity record (D58/D59)
+
+User re-read the assignment PDF and asked, field by field, whether each of the
+10 activity fields was actually surfaced. Honest audit found several were
+captured-but-dormant.
+
+### What was actually missing (vs. captured)
+
+All 10 fields existed in the schema/CSV/sampler; the GAP was the UI. Coverage
+across the 104 bundled activities: prep 89, backups 83, skipAdjustment 104,
+remoteCapable 34. None of prep / skipAdjustment was rendered; location and
+facilitator/equipment names were added in D58 (iter 22).
+
+### The Remote red herring (the useful catch)
+
+The panel HAD a "Remote: Yes" row, but it read `instance.isRemote`, which
+schedule.js only sets true when `Boolean(traveling) && activity.remoteCapable`
+— i.e. ~6% of instances (352/5578), travel windows only. So a remote-CAPABLE
+activity (34/104) showed nothing on a normal day. Lesson: distinguish a
+CAPABILITY field (static, on the activity) from a RUNTIME decision (on the
+instance). `remoteLabel(activity, instance)` now surfaces the capability and
+upgrades the wording when the occurrence is actually delivered remotely.
+
+### Density without a wall (taste)
+
+10 fields in one flat `divide-y` list is a wall. Grouped into **Scheduling**
+(when/where/who) + **Guidance** (prep/metrics/if-skipped) via a tiny
+`DetailGroup` (uppercase micro-label + the existing divider). DENSITY-6 product
+UI, so dense-but-structured is correct — taste-skill is scoped to landing pages,
+its density principle still applies. Skip-adjustment's primary home is the
+skipped-by-reason list (where "didn't place" lives), shown as a muted "If
+skipped: …" sub-line per activity. Backups stay as the human swap note (D39),
+not a raw-id row — listing ids on every primary instance is noise.
+
+### Principle reused
+
+Same split as D39/D58: scheduler/data stay in their native shape; the UI rejoins
++ formats in pure helpers in `ui/aggregate.js` (`remoteLabel`, skipAdjustment on
+grouped items), so it's unit-testable without React.
+
+### Result
+
++9 3-3-3 tests (remoteLabel + skip-adjustment carry/fallback) → 190 green, lint
+clean, build OK, prettier clean. All 10 PDF activity fields now represented in
+the UI.

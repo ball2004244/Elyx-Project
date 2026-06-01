@@ -1,9 +1,11 @@
 /**
  * @file Right-hand panel. Two jobs:
- *  1. Detail of the currently-selected instance (facilitator, equipment,
- *     metrics, remote, and the scheduler's note).
+ *  1. Detail of the currently-selected instance, grouped into "Scheduling"
+ *     (when/where/who) and "Guidance" (prep, metrics, skip-adjustment) so the
+ *     full PDF activity record is legible without becoming a flat wall.
  *  2. The skipped list grouped BY REASON (collapsible) with plain-language
- *     explanations — answers "why are there so many skips?".
+ *     explanations + each activity's skip-adjustment — answers "why are there
+ *     so many skips, and what happens instead?".
  */
 
 import { useState } from 'react';
@@ -18,6 +20,7 @@ import {
   facilitatorLabel,
   equipmentLabels,
   cadenceLabel,
+  remoteLabel,
 } from '../ui/aggregate.js';
 
 function DetailRow({ label, value }) {
@@ -28,6 +31,20 @@ function DetailRow({ label, value }) {
       <span className="text-right font-medium text-zinc-800 dark:text-zinc-200">
         {Array.isArray(value) ? value.join(', ') : value}
       </span>
+    </div>
+  );
+}
+
+/** A labelled group of detail rows; renders nothing if all rows are empty. */
+function DetailGroup({ title, children }) {
+  return (
+    <div className="pt-2 first:pt-0">
+      <h4 className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+        {title}
+      </h4>
+      <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        {children}
+      </div>
     </div>
   );
 }
@@ -63,27 +80,33 @@ function SelectedDetail({
       <p className="mb-3 text-sm leading-snug text-zinc-700 dark:text-zinc-300">
         {activity?.details}
       </p>
-      <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-        <DetailRow
-          label="When"
-          value={`${instance.window.start.slice(0, 10)} · ${clock(instance.window.start)}`}
-        />
-        <DetailRow
-          label="Frequency"
-          value={activity ? cadenceLabel(activity.frequency) : null}
-        />
-        <DetailRow label="Status" value={KIND_LABEL[instance.kind]} />
-        <DetailRow label="Location" value={activity?.location} />
-        <DetailRow
-          label="Facilitator"
-          value={facilitatorLabel(instance.facilitatorId, resourceById)}
-        />
-        <DetailRow
-          label="Equipment"
-          value={equipmentLabels(instance.equipmentIds, resourceById)}
-        />
-        <DetailRow label="Remote" value={instance.isRemote ? 'Yes' : null} />
-        <DetailRow label="Metrics" value={instance.metrics} />
+      <div className="flex flex-col gap-1">
+        <DetailGroup title="Scheduling">
+          <DetailRow
+            label="When"
+            value={`${instance.window.start.slice(0, 10)} · ${clock(instance.window.start)}`}
+          />
+          <DetailRow
+            label="Frequency"
+            value={activity ? cadenceLabel(activity.frequency) : null}
+          />
+          <DetailRow label="Status" value={KIND_LABEL[instance.kind]} />
+          <DetailRow label="Location" value={activity?.location} />
+          <DetailRow
+            label="Facilitator"
+            value={facilitatorLabel(instance.facilitatorId, resourceById)}
+          />
+          <DetailRow
+            label="Equipment"
+            value={equipmentLabels(instance.equipmentIds, resourceById)}
+          />
+          <DetailRow label="Remote" value={remoteLabel(activity, instance)} />
+        </DetailGroup>
+        <DetailGroup title="Guidance">
+          <DetailRow label="Prep" value={activity?.prep} />
+          <DetailRow label="Metrics" value={instance.metrics} />
+          <DetailRow label="If skipped" value={activity?.skipAdjustment} />
+        </DetailGroup>
       </div>
       {note ? (
         <p className="mt-3 flex gap-2 rounded-lg bg-zinc-100 p-2.5 text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
@@ -179,22 +202,29 @@ export function SidePanel({
                         <p className="mb-2 text-[11px] text-zinc-500 dark:text-zinc-400">
                           {g.explanation}
                         </p>
-                        <ul className="flex flex-col gap-1">
+                        <ul className="flex flex-col gap-1.5">
                           {g.items.slice(0, 8).map((it) => (
                             <li
                               key={it.activityId}
                               title={it.details}
-                              className="flex items-center gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-400"
+                              className="text-[11px] text-zinc-600 dark:text-zinc-400"
                             >
-                              <TypeIcon
-                                type={it.type}
-                                size={12}
-                                className="shrink-0 opacity-70"
-                              />
-                              <span className="truncate">{it.label}</span>
-                              <span className="ml-auto shrink-0 font-mono text-zinc-400">
-                                ×{it.count}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <TypeIcon
+                                  type={it.type}
+                                  size={12}
+                                  className="shrink-0 opacity-70"
+                                />
+                                <span className="truncate">{it.label}</span>
+                                <span className="ml-auto shrink-0 font-mono text-zinc-400">
+                                  ×{it.count}
+                                </span>
+                              </div>
+                              {it.skipAdjustment ? (
+                                <p className="mt-0.5 pl-[18px] text-[10px] leading-snug text-zinc-400 dark:text-zinc-500">
+                                  If skipped: {it.skipAdjustment}
+                                </p>
+                              ) : null}
                             </li>
                           ))}
                           {g.items.length > 8 ? (

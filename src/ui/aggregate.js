@@ -231,6 +231,7 @@ export function groupSkippedByReason(plan, activityById) {
         type: a?.activityType ?? 'consultation',
         details: a?.details ?? inst.activityId,
         label: shortLabel(a?.details) || inst.activityId,
+        skipAdjustment: a?.skipAdjustment ?? inst.note ?? '',
         count: 1,
       });
     }
@@ -346,4 +347,20 @@ export function facilitatorLabel(id, resourceById) {
 export function equipmentLabels(ids, resourceById) {
   if (!Array.isArray(ids)) return [];
   return ids.map((id) => resourceById?.get(id)?.name ?? id);
+}
+
+/**
+ * Remote display for the detail panel (D59). The PDF field is a CAPABILITY
+ * (`activity.remoteCapable`), while `instance.isRemote` is the rarer RUNTIME
+ * decision that THIS occurrence is delivered remotely (only true during travel,
+ * see schedule.js). We surface the capability for every remote-capable activity
+ * and upgrade the wording when the occurrence is actually run remotely.
+ * @param {import('../lib/schemas.js').Activity | undefined} activity
+ * @param {import('../lib/schemas.js').ScheduledInstance} instance
+ * @returns {string | null} null when the activity cannot be done remotely.
+ */
+export function remoteLabel(activity, instance) {
+  if (instance?.isRemote) return 'Yes · delivered remotely (member traveling)';
+  if (activity?.remoteCapable) return 'Yes · can be done remotely';
+  return null;
 }

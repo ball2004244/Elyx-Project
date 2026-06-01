@@ -61,7 +61,12 @@ Single-screen calendar app (taste-skill dials VARIANCE 3 / MOTION 3 / DENSITY 6
   (collapsible, plain-language label/explanation, decision D34). The detail rows
   resolve `facilitatorId`/`equipmentIds` to human names via `buildResourceIndex`
   + `facilitatorLabel`/`equipmentLabels` (D58) — the scheduler stays in id-space,
-  the UI rejoins to names.
+  the UI rejoins to names. All 10 PDF activity fields are surfaced (D59), grouped
+  into **Scheduling** (When, Frequency, Status, Location, Facilitator, Equipment,
+  Remote) + **Guidance** (Prep, Metrics, If-skipped) via a `DetailGroup`. Remote
+  reads the CAPABILITY (`activity.remoteCapable`) through `remoteLabel`, not just
+  the travel-only runtime flag; skip-adjustment also appears per-activity in the
+  skipped-by-reason list; backups stay represented by the swap note (D39).
 - `App.jsx` — loads, splits events/routines, drives view mode + anchor + range.
 
 Result: the 90-card Monday wall becomes ~26 deduped event cards on the calendar

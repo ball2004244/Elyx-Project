@@ -18,6 +18,7 @@ import {
   buildResourceIndex,
   facilitatorLabel,
   equipmentLabels,
+  remoteLabel,
 } from '../src/ui/aggregate.js';
 
 const activity = (over) => ({
@@ -364,4 +365,82 @@ test('edge: buildResourceIndex tolerates missing/undefined constraints', () => {
 test('edge: label helpers tolerate an absent index', () => {
   expect(facilitatorLabel('ah-01', undefined)).toBe('ah-01');
   expect(equipmentLabels(['eq-01'], undefined)).toEqual(['eq-01']);
+});
+
+/* ---- remoteLabel (D59) --------------------------------------------------- */
+
+/* happy */
+
+test('happy: remoteLabel shows capability for a remote-capable activity', () => {
+  expect(remoteLabel(activity({ remoteCapable: true }), inst({}))).toBe(
+    'Yes · can be done remotely',
+  );
+});
+
+test('happy: remoteLabel upgrades wording when the instance runs remotely', () => {
+  expect(
+    remoteLabel(activity({ remoteCapable: true }), inst({ isRemote: true })),
+  ).toBe('Yes · delivered remotely (member traveling)');
+});
+
+test('happy: remoteLabel is null for a non-remote activity', () => {
+  expect(remoteLabel(activity({ remoteCapable: false }), inst({}))).toBeNull();
+});
+
+/* hard */
+
+test('hard: an instance flagged remote wins even if capability is false', () => {
+  // The scheduler only sets isRemote during travel for a remote-capable
+  // activity, but the runtime flag is the stronger signal if they ever diverge.
+  expect(
+    remoteLabel(activity({ remoteCapable: false }), inst({ isRemote: true })),
+  ).toBe('Yes · delivered remotely (member traveling)');
+});
+
+test('hard: groupSkippedByReason carries each activity skip-adjustment', () => {
+  const byId = new Map([
+    ['act-1', activity({ skipAdjustment: 'shift to the next free day' })],
+  ]);
+  const groups = groupSkippedByReason(
+    [inst({ kind: 'skipped', window: null, reason: 'member-busy' })],
+    byId,
+  );
+  expect(groups[0].items[0].skipAdjustment).toBe('shift to the next free day');
+});
+
+test('hard: skip item falls back to instance note when activity is unknown', () => {
+  const groups = groupSkippedByReason(
+    [
+      inst({
+        kind: 'skipped',
+        window: null,
+        reason: 'member-busy',
+        note: 'note-from-instance',
+      }),
+    ],
+    new Map(),
+  );
+  expect(groups[0].items[0].skipAdjustment).toBe('note-from-instance');
+});
+
+/* edge */
+
+test('edge: remoteLabel tolerates missing activity/instance', () => {
+  expect(remoteLabel(undefined, inst({}))).toBeNull();
+  expect(remoteLabel(undefined, { isRemote: true })).toBe(
+    'Yes · delivered remotely (member traveling)',
+  );
+});
+
+test('edge: remoteLabel null activity and falsy instance → null', () => {
+  expect(remoteLabel(null, { isRemote: false })).toBeNull();
+});
+
+test('edge: skip-adjustment is empty string when neither source has it', () => {
+  const byId = new Map([['act-1', activity({ skipAdjustment: '' })]]);
+  const groups = groupSkippedByReason(
+    [inst({ kind: 'skipped', window: null, reason: 'member-busy', note: '' })],
+    byId,
+  );
+  expect(groups[0].items[0].skipAdjustment).toBe('');
 });

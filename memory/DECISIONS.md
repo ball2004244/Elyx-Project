@@ -108,6 +108,18 @@ Human-agent agreement. Append/condense as decisions change.
   (falls back to the id if unknown), and a **Location** row from
   `activity.location` (Elyx gym/clinic, home, outdoor, video call, restaurant).
   Names/venue already lived in the loaded data, so no schema change.
+- **D59** — Surface the remaining **PDF activity fields** in the detail panel,
+  grouped to avoid a flat wall: **Scheduling** (When, Frequency, Status,
+  Location, Facilitator, Equipment, Remote) + **Guidance** (Prep, Metrics, If
+  skipped). Two finer points: (1) **Remote** now reads the CAPABILITY
+  (`activity.remoteCapable`, 34/104) via `remoteLabel`, not just the rare runtime
+  flag `instance.isRemote` (~6% of instances, travel-only) — the old "Remote: Yes"
+  was near-invisible; it upgrades to "delivered remotely (member traveling)" when
+  the occurrence actually runs remote. (2) **Skip-adjustment** (PDF #9) now shows
+  per-activity in the **skipped-by-reason** list ("If skipped: …"), its natural
+  home, plus as a Guidance row. **Backups** (PDF #8) stay represented by the
+  existing human swap note (D39), not a raw-id row. All fields already in the
+  loaded data — display-only, no schema/scheduler change.
 
 ---
 

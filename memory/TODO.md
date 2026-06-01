@@ -19,6 +19,7 @@ Jira-like markdown template
 - [ ] Verify on a Vercel PREVIEW deploy (set `GROQ_API_KEY` env var) before promoting to the main URL (D51).
 - [ ] Manual QA: sample → schedule → explore; confirm fallback path when key absent.
 - [x] Side panel resolves resource ids → human names (D58): "Daniel Kim · personal trainer" + equipment names instead of `ah-08`/`eq-NN` (`buildResourceIndex` in aggregate.js; +9 3-3-3 tests, 181 green).
+- [x] Surface all 10 PDF activity fields in the detail panel (D59): grouped Scheduling/Guidance; added Prep, Frequency, Location, "If skipped"; Remote now reads the capability (`remoteCapable`) not just the travel-only runtime flag; skip-adjustment also shown per-activity in the skipped list; backups stay as the swap note. +9 3-3-3 tests → 190 green, lint/build/prettier clean.
 
 ## Backlog
 
