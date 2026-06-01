@@ -14,6 +14,7 @@ import {
   substitutionNote,
   shortLabel,
   cadenceLabel,
+  buildBankSummary,
 } from '../src/ui/aggregate.js';
 
 const activity = (over) => ({
@@ -188,4 +189,98 @@ test('edge: dedupeDay sorts the collapsed row, and bandByDayPart splits it', () 
   expect(bands.map((b) => b.key)).toEqual(['morning', 'afternoon', 'evening']);
   expect(bands.find((b) => b.key === 'morning').items).toHaveLength(1);
   expect(bands.find((b) => b.key === 'evening').items).toHaveLength(0);
+});
+
+/* ---- buildBankSummary (welcome-page bank context, D47) ------------------ */
+
+const constraints = (over) => ({
+  clientSchedule: [],
+  travel: [],
+  equipment: [
+    { id: 'eq-01', name: 'Treadmill', location: 'Elyx gym', availability: [] },
+    { id: 'eq-02', name: 'Yoga Mat', location: 'home', availability: [] },
+  ],
+  specialists: [
+    { id: 'sp-01', name: 'Dr. A', role: 'cardiologist', remoteOk: false },
+  ],
+  alliedHealth: [
+    { id: 'ah-01', name: 'T1', role: 'personal trainer', remoteOk: true },
+    { id: 'ah-08', name: 'T2', role: 'personal trainer', remoteOk: false },
+  ],
+  ...over,
+});
+
+/* happy */
+
+test('happy: buildBankSummary reports correct totals', () => {
+  const s = buildBankSummary(constraints());
+  expect(s.totals).toEqual({ equipment: 2, specialists: 1, alliedHealth: 2 });
+});
+
+test('happy: buildBankSummary groups equipment by venue', () => {
+  const s = buildBankSummary(constraints());
+  const gym = s.venues.find((v) => v.location === 'Elyx gym');
+  const home = s.venues.find((v) => v.location === 'home');
+  expect(gym.items).toEqual(['Treadmill']);
+  expect(home.items).toEqual(['Yoga Mat']);
+});
+
+test('happy: buildBankSummary groups team by role with counts', () => {
+  const s = buildBankSummary(constraints());
+  const trainer = s.team.find((r) => r.role === 'personal trainer');
+  expect(trainer.count).toBe(2);
+});
+
+/* hard */
+
+test('hard: remote flag is true if ANY provider of the role is remote', () => {
+  const s = buildBankSummary(constraints());
+  const trainer = s.team.find((r) => r.role === 'personal trainer');
+  expect(trainer.remote).toBe(true); // ah-01 remote, ah-08 not → true
+  const cardio = s.team.find((r) => r.role === 'cardiologist');
+  expect(cardio.remote).toBe(false);
+});
+
+test('hard: venues and team are sorted alphabetically', () => {
+  const s = buildBankSummary(constraints());
+  expect(s.venues.map((v) => v.location)).toEqual(['Elyx gym', 'home']);
+  expect(s.team.map((r) => r.role)).toEqual([
+    'cardiologist',
+    'personal trainer',
+  ]);
+});
+
+test('hard: specialists and allied health are merged into one team list', () => {
+  const s = buildBankSummary(constraints());
+  // 1 cardiologist role + 1 personal trainer role = 2 distinct roles.
+  expect(s.team).toHaveLength(2);
+});
+
+/* edge */
+
+test('edge: empty constraints yield empty summary', () => {
+  const s = buildBankSummary({
+    equipment: [],
+    specialists: [],
+    alliedHealth: [],
+  });
+  expect(s.venues).toEqual([]);
+  expect(s.team).toEqual([]);
+  expect(s.totals).toEqual({ equipment: 0, specialists: 0, alliedHealth: 0 });
+});
+
+test('edge: missing constraint arrays default to empty', () => {
+  const s = buildBankSummary({});
+  expect(s.team).toEqual([]);
+  expect(s.totals.equipment).toBe(0);
+});
+
+test('edge: equipment without a location is grouped under "other"', () => {
+  const s = buildBankSummary({
+    equipment: [{ id: 'eq-09', name: 'Band', location: '', availability: [] }],
+    specialists: [],
+    alliedHealth: [],
+  });
+  expect(s.venues[0].location).toBe('other');
+  expect(s.venues[0].items).toEqual(['Band']);
 });

@@ -42,7 +42,7 @@ This project uses **bun**.
 bun install
 bun run dev      # local dev server (run manually)
 bun run build    # production build
-bun test         # 127 tests, 3-3-3 per suite
+bun test         # tests, 3-3-3 per suite
 ```
 
 Regenerate sample data:
@@ -51,6 +51,21 @@ Regenerate sample data:
 bun run gen:action-plan   # rebuild action_plan.csv from temp/action_plan_batches
 bun run gen:availability  # rebuild constraint CSVs
 ```
+
+## Sampling new plans
+
+The welcome screen offers two paths, both instant and client-side:
+
+- **Sample new data** — a random sampler (`src/lib/randomSampler.js`) generates a
+  fresh, schema-valid Action Plan, mirroring the bundled dataset's bell-curve
+  priority and per-type facilitator/location/frequency patterns. No API key, no
+  network, no rate limit.
+- **Use our sample data** — loads the bundled `action_plan.csv` (104 activities).
+
+Either way the plan is scheduled against the same deterministic 3-month
+availability. An LLM (Groq) sampler was also built and is preserved for reference
+in `disabled/api-sample.js` (with its prompts documented in `chats/`), but it is
+not wired to the UI — the random sampler is more reliable for a live demo.
 
 ## Stack
 

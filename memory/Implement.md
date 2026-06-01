@@ -175,3 +175,54 @@ keep placement near-linear.
 - `bun run gen:action-plan` (regenerate action_plan.csv from batches)
 - `bun run gen:availability` (regenerate constraint CSVs)
 - `bun run gen:messy` (regenerate the quarantined messy_sample.csv)
+
+
+## Live LLM sampler (v0.2 — feat/llm-sampler) — built
+
+On-demand action-plan generation, layered onto the existing static-CSV app.
+
+```
+WelcomePage (first visit)
+  ├─ "Use our sample data"  → loadData() (bundled CSVs, instant)
+  └─ "Sample new data"      → requestSampledActionPlan() (browser)
+          → POST /api/sample (Vercel serverless, holds GROQ_API_KEY)
+          → makeGroqInvoke → sampleActionPlan({ invokeLLM, config })  [Zod-validated]
+          → buildData(activities)  (reuses the BUNDLED constraints; D47)
+          → schedule(...)  (same engine, same horizon)
+```
+
+- `api/sample.js` — Vercel serverless function (Node). Holds `GROQ_API_KEY` as
+  an env var (D48), calls Groq's OpenAI-compatible chat-completions endpoint
+  (`llama-3.3-70b-versatile` default, override via `GROQ_MODEL`), and runs the
+  result through the existing `sampleActionPlan` so output is Zod-validated.
+  Clamps `activityCount` to [100, 140]. Returns `{ actionPlan, model }`.
+- `src/lib/sampleClient.js` — browser → `/api/sample` POST helper; throws on
+  failure so the caller can fall back (D50).
+- `src/lib/loadData.js` — factored into `buildData(activities, loadErrors)`
+  (constraints memoized + bank summary) so the static loader and the sampler
+  share one path; the sampler swaps the action plan, keeps the deterministic
+  3-month constraints (D47).
+- `src/lib/sampler.js` — rewrote the action-plan prompt to the REAL 13-field
+  schema (dropped the stale `requiredEquipment`/`track` from D36) and baked in
+  every resolved lesson: resource-binding classification (D43), supplement
+  consolidation (D32), name-led `details` (D45), clustered priorities, venue-
+  level equipment. Mirrors the bank ids/roles as prompt text (`BANK_REFERENCE`,
+  `BANK_ROLES`) since `src/` may not import `scripts/` (D49). `extractJson` gained
+  a `jsonrepair` third-tier fallback (D50).
+- `src/ui/aggregate.js` — `buildBankSummary(constraints)`: pure transform that
+  groups the loaded bank into care-team-by-role (+ remote flag) and venues, for
+  the welcome page's read-only context. Derived from the loaded CSVs (no
+  `scripts/` import).
+- `src/components/WelcomePage.jsx` — intro + 3-step how-to + customizable
+  count/type-mix sliders + read-only bank panel + two action buttons. Zinc/teal
+  locks, Phosphor duotone icons, product-UI dials (D20).
+- `src/App.jsx` — split into `App` (data-source gate: welcome → bundled or
+  sampled, with graceful fallback + notice) and `CalendarApp` (the workspace).
+  Topbar gained an optional `New plan` button to return to the sampler.
+
+Config: `.env.example` (committed) documents `GROQ_API_KEY`/`GROQ_MODEL`; `.env`
+is git-ignored. `vercel.json` pins `bun run build` + SPA rewrites that exclude
+`/api`. ESLint: Node-globals override for `api/**` + `scripts/**`.
+
+Tests: 127 → 136 (added a 3-3-3 `buildBankSummary` suite; strengthened sampler
+tests for the bank reference + jsonrepair). Lint clean, build OK.
