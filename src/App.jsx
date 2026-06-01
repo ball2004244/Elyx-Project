@@ -6,7 +6,8 @@
  */
 
 import { useMemo, useState } from 'react';
-import { loadData } from './lib/loadData.js';
+import { loadData, buildData } from './lib/loadData.js';
+import { sampleRandomActionPlan } from './lib/randomSampler.js';
 import { schedule } from './scheduler/schedule.js';
 import { groupByDay, weekRange, monthBounds } from './scheduler/index.js';
 import { MAX_EVENTS_PER_DAY, EVENT_BUFFER_MIN } from './scheduler/config.js';
@@ -17,9 +18,11 @@ import {
   groupSkippedByReason,
   dedupeDay,
   tagEventsForMonth,
+  buildBankSummary,
 } from './ui/aggregate.js';
 import { rangeLabel } from './ui/encoding.js';
 import { Topbar } from './components/Topbar.jsx';
+import { WelcomePage } from './components/WelcomePage.jsx';
 import { SummaryStrip } from './components/SummaryStrip.jsx';
 import { WeekGrid } from './components/WeekGrid.jsx';
 import { DayView } from './components/DayView.jsx';
@@ -38,8 +41,76 @@ const clamp = (day, lo, hi) => (day < lo ? lo : day > hi ? hi : day);
 
 export default function App() {
   const [theme, toggleTheme] = useTheme();
-  // Parse the CSVs once; the scheduler re-runs when the policy changes.
-  const data = useMemo(() => loadData(), []);
+
+  // Parse the bundled CSVs once (constraints + default action plan). The bank
+  // summary for the welcome page is derived from the same loaded constraints,
+  // so src/ never imports scripts/.
+  const bundled = useMemo(() => loadData(), []);
+  const bankSummary = useMemo(
+    () => buildBankSummary(bundled.constraints),
+    [bundled.constraints],
+  );
+
+  // Data source for the session: null until the user chooses on the welcome
+  // page. Either the bundled data or a freshly sampled action plan (D47).
+  const [data, setData] = useState(null);
+  const [sampling, setSampling] = useState(false);
+  const [sampleError, setSampleError] = useState(null);
+
+  const useBundled = () => {
+    setSampleError(null);
+    setData(bundled);
+  };
+
+  const runSample = async (req) => {
+    setSampling(true);
+    setSampleError(null);
+    try {
+      // Client-side random sampler (D55): instant, no API key, no rate limit.
+      // Mirrors the bundled dataset's bell-curve priority + per-type patterns.
+      const activities = sampleRandomActionPlan({
+        total: req.activityCount,
+        distribution: req.distribution,
+      });
+      setData(buildData(activities));
+    } catch (err) {
+      // Defensive fallback (D50): never block the user.
+      setSampleError(err?.message ?? 'Sampling failed.');
+      setData(bundled);
+    } finally {
+      setSampling(false);
+    }
+  };
+
+  if (!data) {
+    return (
+      <WelcomePage
+        bank={bankSummary}
+        onUseBundled={useBundled}
+        onSample={runSample}
+        loading={sampling}
+        error={sampleError}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    );
+  }
+
+  return (
+    <CalendarApp
+      data={data}
+      theme={theme}
+      toggleTheme={toggleTheme}
+      notice={sampleError}
+      onRestart={() => {
+        setData(null);
+      }}
+    />
+  );
+}
+
+/** The calendar workspace, shown once a data source is chosen. */
+function CalendarApp({ data, theme, toggleTheme, notice, onRestart }) {
   const { horizon, activityById } = data;
 
   const [policy, setPolicy] = useState({
@@ -160,11 +231,17 @@ export default function App() {
           setAnchor(horizon.startDay);
           setSelected(null);
         }}
+        onRestart={onRestart}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
 
       <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 sm:px-6">
+        {notice ? (
+          <p className="mb-4 rounded-lg bg-amber-100 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+            {notice}
+          </p>
+        ) : null}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <SummaryStrip
             placed={summary.placed}

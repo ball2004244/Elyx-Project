@@ -245,3 +245,57 @@ export function groupSkippedByReason(plan, activityById) {
     }))
     .sort((a, b) => b.count - a.count);
 }
+
+/**
+ * Summarize the loaded resource bank (the closed-world cast, D13/D49) for the
+ * welcome page so the user sees WHAT the plan is scheduled against. Read-only:
+ * the bank is fixed; only the action-plan request is customizable (D47).
+ *
+ * Groups providers by role (with a count) and venues by location, plus remote
+ * capability — the facts that explain why instances place or skip.
+ * @param {import('../lib/schemas.js').Constraints} constraints
+ * @returns {{
+ *   venues: { location: string, items: string[] }[],
+ *   team: { role: string, count: number, remote: boolean }[],
+ *   totals: { equipment: number, specialists: number, alliedHealth: number },
+ * }}
+ */
+export function buildBankSummary(constraints) {
+  const { equipment = [], specialists = [], alliedHealth = [] } = constraints;
+
+  // Venues: group equipment by location into a name list.
+  const byVenue = new Map();
+  for (const e of equipment) {
+    const loc = e.location || 'other';
+    if (!byVenue.has(loc)) byVenue.set(loc, []);
+    byVenue.get(loc).push(e.name);
+  }
+  const venues = [...byVenue.entries()]
+    .map(([location, items]) => ({ location, items: items.sort() }))
+    .sort((a, b) => a.location.localeCompare(b.location));
+
+  // Care team: group specialists + allied health by role, count providers,
+  // and mark whether ANY provider of that role can work remotely.
+  const byRole = new Map();
+  for (const p of [...specialists, ...alliedHealth]) {
+    if (!byRole.has(p.role)) {
+      byRole.set(p.role, { role: p.role, count: 0, remote: false });
+    }
+    const g = byRole.get(p.role);
+    g.count += 1;
+    if (p.remoteOk) g.remote = true;
+  }
+  const team = [...byRole.values()].sort((a, b) =>
+    a.role.localeCompare(b.role),
+  );
+
+  return {
+    venues,
+    team,
+    totals: {
+      equipment: equipment.length,
+      specialists: specialists.length,
+      alliedHealth: alliedHealth.length,
+    },
+  };
+}

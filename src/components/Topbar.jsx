@@ -5,8 +5,10 @@
 
 import { CaretLeft } from '@phosphor-icons/react/dist/csr/CaretLeft';
 import { CaretRight } from '@phosphor-icons/react/dist/csr/CaretRight';
+import { CaretDoubleLeft } from '@phosphor-icons/react/dist/csr/CaretDoubleLeft';
 import { Sun } from '@phosphor-icons/react/dist/csr/Sun';
 import { Moon } from '@phosphor-icons/react/dist/csr/Moon';
+import { ArrowsClockwise } from '@phosphor-icons/react/dist/csr/ArrowsClockwise';
 import { ViewSwitcher } from './ViewSwitcher.jsx';
 
 /**
@@ -20,6 +22,7 @@ import { ViewSwitcher } from './ViewSwitcher.jsx';
  *   onPrev: () => void,
  *   onNext: () => void,
  *   onStart: () => void,
+ *   onRestart?: () => void,
  *   theme: string,
  *   onToggleTheme: () => void,
  * }} props
@@ -34,6 +37,7 @@ export function Topbar({
   onPrev,
   onNext,
   onStart,
+  onRestart,
   theme,
   onToggleTheme,
 }) {
@@ -46,7 +50,7 @@ export function Topbar({
     <header className="flex h-16 items-center justify-between gap-4 border-b border-zinc-200 px-4 sm:px-6 dark:border-zinc-800">
       <div className="min-w-0">
         <h1 className="truncate text-base font-semibold text-zinc-900 dark:text-zinc-100">
-          Resource Allocator
+          Elyx Resource Allocator
         </h1>
         <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
           {memberName}
@@ -55,6 +59,16 @@ export function Topbar({
 
       <div className="flex items-center gap-1.5">
         <ViewSwitcher mode={mode} onChange={onMode} />
+        <button
+          type="button"
+          className={navBtn}
+          onClick={onStart}
+          disabled={!canPrev}
+          aria-label="Jump to first day"
+          title="Jump to start"
+        >
+          <CaretDoubleLeft size={16} weight="bold" />
+        </button>
         <button
           type="button"
           className={navBtn}
@@ -76,13 +90,16 @@ export function Topbar({
         >
           <CaretRight size={16} weight="bold" />
         </button>
-        <button
-          type="button"
-          onClick={onStart}
-          className="ml-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          Start
-        </button>
+        {onRestart ? (
+          <button
+            type="button"
+            onClick={onRestart}
+            className="ml-1 flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            <ArrowsClockwise size={14} weight="bold" />
+            New plan
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onToggleTheme}

@@ -641,3 +641,120 @@ block/text, unaffected), lint clean, build OK.
 ### For next iteration
 
 - Hosting (Vercel) + GitHub + prompt docs — the last release-gate items.
+
+---
+
+## Iteration 20 (2026-05-31): live LLM sampler + welcome page (D47-D51)
+
+User reframed the backlogged in-app sampler as a UX (not UI) win: let first-time
+visitors either sample fresh data or use ours, via Groq directly (cheap), no BYOK.
+
+### Decisions / pivots
+
+- **Server-side Groq, never in-browser (D48).** A client-side app calling Groq
+  directly ships the key in the bundle = guaranteed credential leak. Built a
+  Vercel serverless function `/api/sample` that holds `GROQ_API_KEY` as an env
+  var and reuses the existing `sampleActionPlan` (so output stays Zod-validated).
+- **Sample the ACTION PLAN only (D47), not availability.** Availability is 1500+
+  precise ISO windows — deterministic by design (D15). One Groq call, not three.
+- **Sample FROM the bank, never the bank (D49).** Cleared a user mix-up: the
+  "~100 entries" is the action plan, not the bank (26 resources). A fixed 26-
+  resource cast supports unbounded distinct plans (like 26 letters → infinite
+  sentences); the bank only bounds the `facilitator` of non-self activities, so
+  it caps FEASIBILITY (over-asking a scarce specialist → honest skips), not
+  variety. Mirrored the bank ids/roles into sampler.js as prompt text (src/ may
+  not import scripts/).
+- **Graceful fallback + jsonrepair (D50).** extractJson now has a third tier
+  (JSON.parse → span-slice → jsonrepair). Any sampling failure falls back to
+  bundled data with a notice; bundled data is always the instant default.
+- **Branch + preview deploy (D51).** Built on feat/llm-sampler; promote to the
+  main URL only after a preview deploy with the key set is verified.
+
+### What worked
+
+- **The sampler was already DI-shaped (BYOK).** `sampleActionPlan({ invokeLLM })`
+  meant the serverless function is a thin Groq adapter — zero core rewrite. The
+  Dependency Inversion from iteration 1 paid off exactly as intended.
+- **Bank as read-only context.** `buildBankSummary(constraints)` (pure, in
+  aggregate.js, derived from the loaded CSVs — no scripts/ import) renders the
+  care team (by role, with remote flag) + venues on the welcome page. Customize
+  the PLAN REQUEST (count, type mix); the bank stays read-only — truthful to the
+  concierge model (the member doesn't pick the roster).
+- **Prompt rewrite caught real drift.** The old action-plan prompt still asked
+  for `requiredEquipment` + `track` — fields D36 DELETED. Rewrote it to the real
+  13-field schema and baked in every resolved lesson (resource-binding
+  classification D43, supplement consolidation D32, name-led details D45,
+  priority clustering, venue-level equipment).
+
+### Gotchas
+
+- ESLint flagged `process`/`Buffer` in `api/` (browser globals config). Added a
+  Node-environment override for `api/**` + `scripts/**`.
+- `bun run format` only globs src/scripts/tests — `api/` needs a manual prettier
+  pass. (Left as-is; could widen the glob later.)
+- `.env` was NOT git-ignored. Added `.env` / `.env.*` (keep `.env.example`)
+  BEFORE writing any key-touching code.
+
+### For next iteration
+
+- Preview-deploy with `GROQ_API_KEY` set; manual QA the sample→schedule→explore
+  loop + the fallback path; then promote to the main URL.
+- Consider a count/timeout guard if sampling proves slow on the free tier.
+
+---
+
+## Iteration 21 (2026-05-31): per-type parallel sampling + multi-key rotation (D52/D53)
+
+User asked whether one Groq call or many is better, and whether to "sample
+uniformly then join."
+
+### Decisions / reasoning
+
+- **Per-type, not uniform-then-join (D52).** Clarified a counterintuitive trap:
+  running K identical "uniform mix" prompts CONVERGES on the same popular items
+  (Zone-2 run, sauna, supplement stack) → heavy cross-batch duplication after
+  join, FEWER unique rows. The lever for diversity is PARTITIONING the space:
+  one call per activityType, each asked for an EXACT count of DISTINCT items.
+  Distribution becomes deterministic (we compute counts from the sliders), and
+  cross-type dupes are impossible by construction. Mirrors iteration-1's 6
+  by-domain subagents.
+- **`computeTypeCounts`** (largest-remainder) turns total+fractions into exact
+  per-type integers that sum to the total.
+- **`mergeActionPlanBatches`**: dedupe by (type + normalized first clause) →
+  renumber ids contiguously → CRUCIALLY remap each batch's internal `backups` id
+  references to the new ids (the scheduler resolves backups by id — `byId.get`),
+  label backups pass through → sort by priority.
+
+### The real blocker: TPM, not the model (D53)
+
+First parallel run returned 0 activities with no errors logged — the calls were
+silently 413ing. Root cause: **Groq free tier ≈ 12,000 TPM**. My `max_tokens:
+16000` ALONE exceeded it (a request reserves prompt+max_tokens against TPM), and
+5 per-type calls (~5.4K tokens each) overshoot one key's per-minute budget even
+sequentially (they land in the same rolling minute). Fixes:
+- `max_tokens` → 3500; live count clamp lowered to 30–80 (bundled data meets the
+  ≥100 gate, so the LIVE cap can be small).
+- **Multi-key round-robin:** `GROQ_API_KEY` now accepts comma-separated keys; the
+  adapter round-robins calls across them (independent TPM budgets) and
+  rotates+backs off on 429/413. Concurrency = key count. With 3 keys: count 70 →
+  HTTP 200 in 7.2s, all 5 types succeed, mix balanced (21/14/11/10/7 — dedupe
+  trimmed 7 near-dup fitness, the diversity safeguard working), 63 unique rows,
+  schedules clean, all 14 id-backups resolve.
+
+### Gotchas
+
+- `Promise.allSettled` swallowed the 413s into empty fulfilled batches (the
+  filter dropped nothing because there was nothing) → 0 rows, no error. Had to
+  probe the raw Groq HTTP status directly (413 body) to find the TPM limit.
+- A single big call (8K) had worked earlier — masking the TPM ceiling until the
+  per-type split multiplied prompt overhead 5×.
+
+### Security
+
+- Real Groq keys were pasted into chat/.env again (3 this time). `.env` is
+  git-ignored, but treat them as dev/throwaway and rotate before any real launch.
+
+### For next iteration
+
+- Preview-deploy with `GROQ_API_KEY` (comma-separated) set in Vercel env; QA the
+  loop; then promote. 154 tests green, lint clean, build OK.

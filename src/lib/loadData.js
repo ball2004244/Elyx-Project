@@ -18,6 +18,34 @@ import { fromConstraintCsvs } from './constraintsCsv.js';
 import { schedule } from '../scheduler/schedule.js';
 import { deriveHorizon } from '../scheduler/index.js';
 
+/** Parse + validate the bundled constraint CSVs once (memoized). */
+let _constraints = null;
+function bundledConstraints() {
+  if (!_constraints) {
+    _constraints = fromConstraintCsvs({
+      resources: resourcesCsv,
+      resourceWindows: resourceWindowsCsv,
+      clientSchedule: clientScheduleCsv,
+      travel: travelCsv,
+    });
+  }
+  return _constraints;
+}
+
+/**
+ * Build the loaded-data bundle from a given set of activities + the bundled
+ * constraints. Shared by the static loader and the live sampler (D47): the
+ * sampler swaps the action plan but keeps the deterministic 3-month constraints.
+ * @param {import('./schemas.js').Activity[]} activities
+ * @param {{ row: number, id: string, message: string }[]} [loadErrors]
+ */
+export function buildData(activities, loadErrors = []) {
+  const constraints = bundledConstraints();
+  const horizon = deriveHorizon(constraints);
+  const activityById = new Map(activities.map((a) => [a.id, a]));
+  return { activities, constraints, horizon, loadErrors, activityById };
+}
+
 /**
  * Parse + validate the static CSVs (no scheduling). Call once; the scheduler is
  * re-run separately whenever workload options change.
@@ -33,18 +61,7 @@ export function loadData() {
   const { activities, errors: loadErrors } = loadActivities(
     parseCsv(actionPlanCsv),
   );
-
-  const constraints = fromConstraintCsvs({
-    resources: resourcesCsv,
-    resourceWindows: resourceWindowsCsv,
-    clientSchedule: clientScheduleCsv,
-    travel: travelCsv,
-  });
-
-  const horizon = deriveHorizon(constraints);
-  const activityById = new Map(activities.map((a) => [a.id, a]));
-
-  return { activities, constraints, horizon, loadErrors, activityById };
+  return buildData(activities, loadErrors);
 }
 
 /**
