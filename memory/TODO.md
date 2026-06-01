@@ -18,6 +18,7 @@ Jira-like markdown template
 - [x] Welcome page shows the closed-world bank read-only (`buildBankSummary`: care team by role + venues) + a concise 3-step how-to + customizable count/type-mix sliders.
 - [ ] Verify on a Vercel PREVIEW deploy (set `GROQ_API_KEY` env var) before promoting to the main URL (D51).
 - [ ] Manual QA: sample → schedule → explore; confirm fallback path when key absent.
+- [x] Side panel resolves resource ids → human names (D58): "Daniel Kim · personal trainer" + equipment names instead of `ah-08`/`eq-NN` (`buildResourceIndex` in aggregate.js; +9 3-3-3 tests, 181 green).
 
 ## Backlog
 

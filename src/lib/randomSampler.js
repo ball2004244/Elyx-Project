@@ -15,6 +15,7 @@
  */
 
 import { Activity } from './schemas.js';
+import { largestRemainder } from './distribute.js';
 
 /* -------------------------------------------------------------------------- */
 /* Seeded RNG (mulberry32) — reproducible draws, optional seed                */
@@ -51,9 +52,11 @@ function weightedPick(rng, weights) {
  * Approximate a bell curve over 1..10 via the sum of two uniforms (triangular),
  * matching the bundled plan's clustered-mid priorities (peak ~5).
  */
+const PRIORITY_MAX = 10;
 function bellPriority(rng) {
-  const v = Math.round(1 + 4.5 * (rng() + rng())); // 1..10, peak ~5-6
-  return Math.max(1, Math.min(10, v));
+  // Two uniforms sum to a triangular [0,2] dist (peak at 1); scale to ~[1,10].
+  const v = Math.round(1 + ((PRIORITY_MAX - 1) / 2) * (rng() + rng()));
+  return Math.max(1, Math.min(PRIORITY_MAX, v));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -301,7 +304,7 @@ const COUNT_RANGE = {
   year: [1, 4],
 };
 
-export { TYPE_SPEC, bellPriority };
+export { TYPE_SPEC };
 
 /* -------------------------------------------------------------------------- */
 /* Generation                                                                 */
@@ -318,38 +321,19 @@ export const DEFAULT_DISTRIBUTION = {
 
 /**
  * Turn a total + fractional distribution into exact per-type integer counts
- * that sum to the total (largest-remainder). Zero-weight types are omitted.
+ * that sum to the total (largest-remainder). Zero-weight types are omitted; a
+ * type may legitimately round to 0 at small totals, and `total <= 0` yields {}.
  * @param {number} total
  * @param {Record<string, number>} distribution
  * @returns {Record<string, number>}
  */
 export function typeCounts(total, distribution = DEFAULT_DISTRIBUTION) {
-  const types = Object.keys(TYPE_SPEC).filter(
-    (t) => (distribution[t] ?? 0) > 0,
-  );
-  const sum = types.reduce((n, t) => n + distribution[t], 0) || 1;
-  const raw = types.map((t) => ({ t, exact: (distribution[t] / sum) * total }));
-  const counts = {};
-  let assigned = 0;
-  for (const { t, exact } of raw) {
-    counts[t] = Math.max(1, Math.floor(exact));
-    assigned += counts[t];
+  // Restrict to known activity types with positive weight, then split exactly.
+  const weights = {};
+  for (const t of Object.keys(TYPE_SPEC)) {
+    if ((distribution[t] ?? 0) > 0) weights[t] = distribution[t];
   }
-  let rem = total - assigned;
-  const byFrac = [...raw].sort((a, b) => (b.exact % 1) - (a.exact % 1));
-  let i = 0;
-  while (rem > 0 && byFrac.length) {
-    counts[byFrac[i % byFrac.length].t] += 1;
-    rem -= 1;
-    i += 1;
-  }
-  while (rem < 0) {
-    const big = types.sort((a, b) => counts[b] - counts[a])[0];
-    if (counts[big] <= 1) break;
-    counts[big] -= 1;
-    rem += 1;
-  }
-  return counts;
+  return largestRemainder(weights, total);
 }
 
 /** Build one activity of `type` with the given id, drawing from the pools. */
@@ -411,15 +395,6 @@ function makeActivity(rng, type, id, item) {
 }
 
 /**
- * Sample a full Action Plan without an LLM (D55). Draws `total` activities split
- * by `distribution`, mirroring the bundled dataset's statistics, then sorts by
- * the bell-curve priority and renumbers ids contiguously (act-001..). Every row
- * is Zod-validated; output references only canonical bank roles.
- *
- * @param {{ total?: number, distribution?: Record<string, number>, seed?: number }} [opts]
- * @returns {import('./schemas.js').Activity[]}
- */
-/**
  * Natural qualifiers appended to overflow items (when a type's count exceeds its
  * pool), so a repeated activity reads like a real progression rather than
  * "(variant 2)". Cycled by overflow round.
@@ -432,6 +407,15 @@ const VARIANT_QUALIFIER = [
   'technique focus',
 ];
 
+/**
+ * Sample a full Action Plan without an LLM (D55). Draws `total` activities split
+ * by `distribution`, mirroring the bundled dataset's statistics, then sorts by
+ * the bell-curve priority and renumbers ids contiguously (act-001..). Every row
+ * is Zod-validated; output references only canonical bank roles.
+ *
+ * @param {{ total?: number, distribution?: Record<string, number>, seed?: number }} [opts]
+ * @returns {import('./schemas.js').Activity[]}
+ */
 export function sampleRandomActionPlan({
   total = 100,
   distribution = DEFAULT_DISTRIBUTION,

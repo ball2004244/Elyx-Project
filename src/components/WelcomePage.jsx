@@ -21,6 +21,7 @@ import { Moon } from '@phosphor-icons/react/dist/csr/Moon';
 import { TYPE_ORDER, TYPE_STYLE } from '../ui/encoding.js';
 import { TypeIcon } from '../ui/icons.jsx';
 import { typeCounts } from '../lib/randomSampler.js';
+import { largestRemainder } from '../lib/distribute.js';
 
 const STEPS = [
   ['Sample', 'Generate a fresh action plan, or use our prepared one.'],
@@ -66,31 +67,6 @@ export function WelcomePage({
     consultation: 10,
   });
 
-  // Distribute a target total across weighted entries as integers that sum
-  // exactly to the target (largest-remainder).
-  const distributeInts = (weights, target) => {
-    const sum = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
-    const raw = Object.entries(weights).map(([t, w]) => ({
-      t,
-      exact: (w / sum) * target,
-    }));
-    const out = {};
-    let assigned = 0;
-    for (const { t, exact } of raw) {
-      out[t] = Math.floor(exact);
-      assigned += out[t];
-    }
-    let rem = target - assigned;
-    const byFrac = [...raw].sort((a, b) => (b.exact % 1) - (a.exact % 1));
-    let i = 0;
-    while (rem > 0 && byFrac.length) {
-      out[byFrac[i % byFrac.length].t] += 1;
-      rem -= 1;
-      i += 1;
-    }
-    return out;
-  };
-
   // Set one type's percentage; redistribute the rest to keep the sum at 100.
   const setMixValue = (type, value) => {
     const newVal = Math.max(0, Math.min(100, value));
@@ -101,8 +77,12 @@ export function WelcomePage({
       othersTotal > 0
         ? Object.fromEntries(others.map((t) => [t, mix[t] || 0]))
         : Object.fromEntries(others.map((t) => [t, 1])); // equal split
-    const distributed = distributeInts(shares, remaining);
-    setMix({ [type]: newVal, ...distributed });
+    const distributed = largestRemainder(shares, remaining);
+    // largestRemainder omits zero-weight keys; ensure every "other" type is set.
+    const filled = Object.fromEntries(
+      others.map((t) => [t, distributed[t] ?? 0]),
+    );
+    setMix({ [type]: newVal, ...filled });
   };
 
   // mix already sums to 100, so the fraction is simply pct/100.
@@ -193,9 +173,6 @@ export function WelcomePage({
               {/* Type mix */}
               <p className="mt-5 mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
                 Type mix
-                <span className="ml-1 font-normal text-zinc-400 dark:text-zinc-500">
-                  — activities per type
-                </span>
               </p>
               <div className="flex flex-col gap-2.5">
                 {TYPE_ORDER.map((t) => (
@@ -256,11 +233,6 @@ export function WelcomePage({
                 Use our sample data
               </button>
             </div>
-            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-              Both options generate a fresh plan instantly — sampled to mirror a
-              realistic concierge program. Either way the plan is scheduled
-              against the same fixed availability below.
-            </p>
           </section>
 
           {/* Right: read-only bank context */}
@@ -269,9 +241,7 @@ export function WelcomePage({
               Care team &amp; facilities
             </h2>
             <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              The fixed resources every plan is scheduled against —{' '}
-              {bank.totals.specialists + bank.totals.alliedHealth} providers,{' '}
-              {bank.totals.equipment} equipment items.
+              The fixed resources every plan is scheduled against
             </p>
 
             <div className="mt-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">

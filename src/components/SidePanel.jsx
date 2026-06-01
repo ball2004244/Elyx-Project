@@ -13,7 +13,12 @@ import { X } from '@phosphor-icons/react/dist/csr/X';
 import { CaretDown } from '@phosphor-icons/react/dist/csr/CaretDown';
 import { TypeIcon } from '../ui/icons.jsx';
 import { TYPE_STYLE, KIND_LABEL, clock } from '../ui/encoding.js';
-import { substitutionNote } from '../ui/aggregate.js';
+import {
+  substitutionNote,
+  facilitatorLabel,
+  equipmentLabels,
+  cadenceLabel,
+} from '../ui/aggregate.js';
 
 function DetailRow({ label, value }) {
   if (!value || (Array.isArray(value) && value.length === 0)) return null;
@@ -27,7 +32,13 @@ function DetailRow({ label, value }) {
   );
 }
 
-function SelectedDetail({ instance, activity, activityById, onClear }) {
+function SelectedDetail({
+  instance,
+  activity,
+  activityById,
+  resourceById,
+  onClear,
+}) {
   const type = activity?.activityType ?? 'consultation';
   const note =
     instance.kind === 'backup' ? substitutionNote(instance, activityById) : '';
@@ -57,9 +68,20 @@ function SelectedDetail({ instance, activity, activityById, onClear }) {
           label="When"
           value={`${instance.window.start.slice(0, 10)} · ${clock(instance.window.start)}`}
         />
+        <DetailRow
+          label="Frequency"
+          value={activity ? cadenceLabel(activity.frequency) : null}
+        />
         <DetailRow label="Status" value={KIND_LABEL[instance.kind]} />
-        <DetailRow label="Facilitator" value={instance.facilitatorId} />
-        <DetailRow label="Equipment" value={instance.equipmentIds} />
+        <DetailRow label="Location" value={activity?.location} />
+        <DetailRow
+          label="Facilitator"
+          value={facilitatorLabel(instance.facilitatorId, resourceById)}
+        />
+        <DetailRow
+          label="Equipment"
+          value={equipmentLabels(instance.equipmentIds, resourceById)}
+        />
         <DetailRow label="Remote" value={instance.isRemote ? 'Yes' : null} />
         <DetailRow label="Metrics" value={instance.metrics} />
       </div>
@@ -77,6 +99,7 @@ function SelectedDetail({ instance, activity, activityById, onClear }) {
  * @param {{
  *   selected: object | null,
  *   activityById: Map<string, object>,
+ *   resourceById: Map<string, { name: string, role: string, kind: string }>,
  *   skippedByReason: object[],
  *   onClear: () => void,
  * }} props
@@ -84,6 +107,7 @@ function SelectedDetail({ instance, activity, activityById, onClear }) {
 export function SidePanel({
   selected,
   activityById,
+  resourceById,
   skippedByReason,
   onClear,
 }) {
@@ -97,6 +121,7 @@ export function SidePanel({
           instance={selected}
           activity={activityById.get(selected.activityId)}
           activityById={activityById}
+          resourceById={resourceById}
           onClear={onClear}
         />
       ) : (

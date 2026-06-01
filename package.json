@@ -17,7 +17,6 @@
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
     "jsonrepair": "^3.14.0",
-    "papaparse": "^5.5.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "zod": "^4.4.3"

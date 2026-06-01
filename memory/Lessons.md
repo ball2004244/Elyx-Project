@@ -758,3 +758,40 @@ sequentially (they land in the same rolling minute). Fixes:
 
 - Preview-deploy with `GROQ_API_KEY` (comma-separated) set in Vercel env; QA the
   loop; then promote. 154 tests green, lint clean, build OK.
+
+
+## Iteration 22 (2026-05-31): side panel showed resource ids, not names (D58)
+
+User: "when I select an item, shouldn't the facilitator be a name instead of
+id?" The detail panel showed `ah-08` where it should read "Daniel Kim".
+
+### Root cause
+
+`SidePanel` rendered `instance.facilitatorId`/`instance.equipmentIds` verbatim.
+The scheduler only carries ids (it works in id-space — `schedule.js` sets
+`facilitatorId: provider.meta.id`), while the human NAMES live in the loaded
+`constraints` (resources.csv → equipment/specialists/alliedHealth, each with a
+`name`/`role`). Nothing rejoined the two on the way to the UI.
+
+### Fix (D58) — rejoin ids → names in the pure view-model layer
+
+- `buildResourceIndex(constraints)` (aggregate.js, pure) → `Map<id, {name, role,
+  kind}>` over all three resource kinds.
+- `facilitatorLabel(id, index)` → "Name · role" (name-only when role-less, raw
+  id as a safe fallback for unknown ids); `equipmentLabels(ids, index)` → names.
+- `App` memoizes the index from `data.constraints` and passes `resourceById` to
+  `SidePanel`; the detail rows now resolve through the helpers.
+
+### Why this layer
+
+Same principle as D39's substitution notes: the scheduler stays in id-space
+(pure, testable), and the UI rejoins to human-readable names in `ui/aggregate.js`
+(the one place that owns presentation joins). Components stay declarative; the
+join is unit-testable without React. Defensive fallbacks (unknown id → raw id,
+missing index → raw id) keep a sampled/edited plan from ever crashing the panel.
+
+### Result
+
+Facilitator reads "Daniel Kim · personal trainer", equipment shows names. +9
+3-3-3 tests (buildResourceIndex / facilitatorLabel / equipmentLabels) → 181
+green, lint clean, build OK.

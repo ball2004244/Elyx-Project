@@ -19,6 +19,7 @@ import {
   dedupeDay,
   tagEventsForMonth,
   buildBankSummary,
+  buildResourceIndex,
 } from './ui/aggregate.js';
 import { rangeLabel } from './ui/encoding.js';
 import { Topbar } from './components/Topbar.jsx';
@@ -112,6 +113,12 @@ export default function App() {
 /** The calendar workspace, shown once a data source is chosen. */
 function CalendarApp({ data, theme, toggleTheme, notice, onRestart }) {
   const { horizon, activityById } = data;
+
+  // Resolve scheduler-emitted resource ids → human names for the detail panel.
+  const resourceById = useMemo(
+    () => buildResourceIndex(data.constraints),
+    [data.constraints],
+  );
 
   const [policy, setPolicy] = useState({
     maxEventsPerDay: MAX_EVENTS_PER_DAY,
@@ -300,6 +307,7 @@ function CalendarApp({ data, theme, toggleTheme, notice, onRestart }) {
             <SidePanel
               selected={selected}
               activityById={activityById}
+              resourceById={resourceById}
               skippedByReason={skippedByReason}
               onClear={() => setSelected(null)}
             />

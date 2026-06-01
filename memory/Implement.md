@@ -58,7 +58,10 @@ Single-screen calendar app (taste-skill dials VARIANCE 3 / MOTION 3 / DENSITY 6
 - `components/ActivityBlock` — one event; type color, ×N badge, dashed backup,
   remote icon.
 - `components/SidePanel` — selected-instance detail + skipped grouped BY REASON
-  (collapsible, plain-language label/explanation, decision D34).
+  (collapsible, plain-language label/explanation, decision D34). The detail rows
+  resolve `facilitatorId`/`equipmentIds` to human names via `buildResourceIndex`
+  + `facilitatorLabel`/`equipmentLabels` (D58) — the scheduler stays in id-space,
+  the UI rejoins to names.
 - `App.jsx` — loads, splits events/routines, drives view mode + anchor + range.
 
 Result: the 90-card Monday wall becomes ~26 deduped event cards on the calendar

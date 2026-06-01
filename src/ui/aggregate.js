@@ -299,3 +299,51 @@ export function buildBankSummary(constraints) {
     },
   };
 }
+
+/**
+ * Index every bank resource (equipment, specialists, allied health) by id so
+ * the UI can resolve a scheduler-emitted `facilitatorId`/`equipmentIds` back to
+ * a human name + role (D58). Names already live in the loaded constraints; the
+ * scheduler only carries ids, so this is the one place that rejoins them.
+ * @param {import('../lib/schemas.js').Constraints} constraints
+ * @returns {Map<string, { name: string, role: string, kind: string }>}
+ */
+export function buildResourceIndex(constraints) {
+  const index = new Map();
+  if (!constraints) return index;
+  const add = (kind, list = []) => {
+    for (const r of list) {
+      index.set(r.id, { name: r.name ?? r.id, role: r.role ?? '', kind });
+    }
+  };
+  add('equipment', constraints.equipment);
+  add('specialist', constraints.specialists);
+  add('alliedHealth', constraints.alliedHealth);
+  return index;
+}
+
+/**
+ * Resolve a single facilitator id to a display string: "Daniel Kim · personal
+ * trainer", or just the name when no role, or the raw id as a safe fallback.
+ * @param {string | null} id
+ * @param {Map<string, { name: string, role: string }>} resourceById
+ * @returns {string | null}
+ */
+export function facilitatorLabel(id, resourceById) {
+  if (!id) return null;
+  const r = resourceById?.get(id);
+  if (!r) return id;
+  return r.role ? `${r.name} · ${r.role}` : r.name;
+}
+
+/**
+ * Resolve a list of equipment ids to their names (falling back to the raw id
+ * for anything unknown). Empty/missing input → empty array.
+ * @param {string[] | null} ids
+ * @param {Map<string, { name: string }>} resourceById
+ * @returns {string[]}
+ */
+export function equipmentLabels(ids, resourceById) {
+  if (!Array.isArray(ids)) return [];
+  return ids.map((id) => resourceById?.get(id)?.name ?? id);
+}

@@ -23,6 +23,7 @@
 
 import { jsonrepair } from 'jsonrepair';
 import { Activity, ActionPlan, Constraints } from './schemas.js';
+import { largestRemainder } from './distribute.js';
 
 /* -------------------------------------------------------------------------- */
 /* The closed bank (mirror of scripts/resourceBank.js)                        */
@@ -480,35 +481,11 @@ export const ACTIVITY_TYPES = [
  * @returns {Record<string, number>}
  */
 export function computeTypeCounts(total, distribution) {
-  const types = ACTIVITY_TYPES.filter((t) => (distribution[t] ?? 0) > 0);
-  const sum = types.reduce((n, t) => n + distribution[t], 0) || 1;
-
-  const raw = types.map((t) => ({ t, exact: (distribution[t] / sum) * total }));
-  const counts = {};
-  let assigned = 0;
-  for (const { t, exact } of raw) {
-    counts[t] = Math.max(1, Math.floor(exact));
-    assigned += counts[t];
+  const weights = {};
+  for (const t of ACTIVITY_TYPES) {
+    if ((distribution[t] ?? 0) > 0) weights[t] = distribution[t];
   }
-  // Distribute the remainder by largest fractional part.
-  let remainder = total - assigned;
-  const byFrac = [...raw].sort(
-    (a, b) => (b.exact % 1) - (a.exact % 1) || b.exact - a.exact,
-  );
-  let i = 0;
-  while (remainder > 0 && byFrac.length) {
-    counts[byFrac[i % byFrac.length].t] += 1;
-    remainder -= 1;
-    i += 1;
-  }
-  // If flooring overshot (rare), trim from the largest counts.
-  while (remainder < 0) {
-    const big = types.sort((a, b) => counts[b] - counts[a])[0];
-    if (counts[big] <= 1) break;
-    counts[big] -= 1;
-    remainder += 1;
-  }
-  return counts;
+  return largestRemainder(weights, total);
 }
 
 /**

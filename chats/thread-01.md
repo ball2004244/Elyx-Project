@@ -65,3 +65,21 @@ User: welcome-page toggle location is weird (floats mid-page). And some entries 
 Agent: (1) Toggle: it sat at the right edge of the max-w-2xl intro block, not the page → moved it to its own full-width top row so it pins to the true top-right corner. (2) ×3 explained: NOT a duplicate/bug — dedupeDay intentionally collapses same-activity-same-day instances into one card with a ×N badge (N = the activity's per-day frequency). BUT it exposed a real data-realism bug: the random sampler's COUNT_RANGE.day=[1,3] applied to ALL types, so it could emit "overhead press 3x/day" (nonsense). Fixed: per-day count >1 now only allowed for food, medication, or light intraday reminders (eye exercise/mobility/posture/breath/stretch/hydration/walk); everything else (strength, cardio, massage, consultation) is capped at 1x/day. Verified across 20 seeds: 0 implausible multi/day, 263 legit (meals/meds/eye-exercise). Locked it with a test (merged into the shortLabel hard test to stay 3-3-3). 163 green, lint clean, build OK.
 
 ---
+
+User: when i selected an item, shouldnt the facilitator be a name instead of id? [+ screenshot: detail panel showing Facilitator "ah-08"]
+
+Agent: Confirmed the bug (D58). SidePanel rendered raw `instance.facilitatorId`/`equipmentIds` (e.g. `ah-08`), but the scheduler works in id-space (schedule.js sets `facilitatorId: provider.meta.id`) while the human NAMES live in the loaded constraints (resources.csv → equipment/specialists/alliedHealth, each w/ name+role). Nothing rejoined them for the UI. Fixed in the pure view-model layer (same principle as D39 substitution notes): added `buildResourceIndex(constraints)` → Map<id,{name,role,kind}>, `facilitatorLabel(id,idx)` → "Daniel Kim · personal trainer" (name-only when role-less, raw id fallback for unknown ids), `equipmentLabels(ids,idx)` → names. App memoizes the index from data.constraints and passes `resourceById` to SidePanel; detail rows resolve through the helpers. Defensive fallbacks (unknown id / missing index → raw id) so a sampled/edited plan never crashes the panel. +9 3-3-3 tests → 181 green, lint clean, build OK. Updated DECISIONS (D58), Implement, Lessons (iter 22), TODO.
+
+---
+
+User: do we have info about venue as well?
+
+Agent: Yes — every activity carries a venue in `activity.location`. Bundled-plan breakdown: home 58, Elyx clinic 20, Elyx gym 17, outdoor 4, video call 4, restaurant 1. The scheduler already uses it (classify.js: gym/clinic = venue-bound EVENT that contends for slots; everything else self-care). It just wasn't surfaced in the panel. Added a "Location" DetailRow to SidePanel from `activity.location` (SidePanel already receives the activity; DetailRow hides empty values so no extra logic). Folded into D58. Build clean, no new tests needed (pure display of an existing field). Venue NAMES (equipment per venue) live in constraints.equipment grouped by location — already shown on the welcome page via buildBankSummary.
+
+---
+
+User: anything else to add up? / what is cadence? / make sense, call it Frequency
+
+Agent: Audited unused-but-populated activity fields (104 activities): frequency 104, skipAdjustment 104, priority/rationale 104, prep 89, backups 83. Recommended surfacing Frequency + Skip-adjustment (+ optional Priority), leaving prep/backups out (taste: avoid a wall; backups already covered by the swap note). Clarified "cadence" = how often the activity repeats (the `frequency` field, `{count,period}` → cadenceLabel "3x / week"); the panel shows one INSTANCE (a single dated slot) while frequency is the recurring rule it belongs to. User chose the label "Frequency". Added a Frequency DetailRow to SidePanel after When (reuses cadenceLabel, guards missing activity, DetailRow hides empties). Build + lint clean, no schema change.
+
+---

@@ -15,6 +15,9 @@ import {
   shortLabel,
   cadenceLabel,
   buildBankSummary,
+  buildResourceIndex,
+  facilitatorLabel,
+  equipmentLabels,
 } from '../src/ui/aggregate.js';
 
 const activity = (over) => ({
@@ -283,4 +286,82 @@ test('edge: equipment without a location is grouped under "other"', () => {
   });
   expect(s.venues[0].location).toBe('other');
   expect(s.venues[0].items).toEqual(['Band']);
+});
+
+/* ---- buildResourceIndex / facilitatorLabel / equipmentLabels (D58) ------ */
+
+/* happy */
+
+test('happy: buildResourceIndex maps every resource id to name/role/kind', () => {
+  const idx = buildResourceIndex(constraints());
+  expect(idx.get('ah-08')).toEqual({
+    name: 'T2',
+    role: 'personal trainer',
+    kind: 'alliedHealth',
+  });
+  expect(idx.get('eq-01').name).toBe('Treadmill');
+  expect(idx.get('sp-01').kind).toBe('specialist');
+});
+
+test('happy: facilitatorLabel renders "Name · role"', () => {
+  const idx = buildResourceIndex(constraints());
+  expect(facilitatorLabel('ah-01', idx)).toBe('T1 · personal trainer');
+  expect(facilitatorLabel('sp-01', idx)).toBe('Dr. A · cardiologist');
+});
+
+test('happy: equipmentLabels resolves a list of ids to names', () => {
+  const idx = buildResourceIndex(constraints());
+  expect(equipmentLabels(['eq-01', 'eq-02'], idx)).toEqual([
+    'Treadmill',
+    'Yoga Mat',
+  ]);
+});
+
+/* hard */
+
+test('hard: unknown ids fall back to the raw id, not a crash', () => {
+  const idx = buildResourceIndex(constraints());
+  expect(facilitatorLabel('ah-99', idx)).toBe('ah-99');
+  expect(equipmentLabels(['eq-01', 'eq-99'], idx)).toEqual([
+    'Treadmill',
+    'eq-99',
+  ]);
+});
+
+test('hard: a role-less resource shows just the name', () => {
+  const idx = buildResourceIndex({
+    equipment: [],
+    specialists: [],
+    alliedHealth: [{ id: 'ah-x', name: 'No Role', remoteOk: false }],
+  });
+  expect(facilitatorLabel('ah-x', idx)).toBe('No Role');
+});
+
+test('hard: a resource missing a name falls back to its id', () => {
+  const idx = buildResourceIndex({
+    equipment: [{ id: 'eq-x', location: 'home', availability: [] }],
+    specialists: [],
+    alliedHealth: [],
+  });
+  expect(idx.get('eq-x').name).toBe('eq-x');
+  expect(equipmentLabels(['eq-x'], idx)).toEqual(['eq-x']);
+});
+
+/* edge */
+
+test('edge: null/empty facilitator and equipment inputs', () => {
+  const idx = buildResourceIndex(constraints());
+  expect(facilitatorLabel(null, idx)).toBeNull();
+  expect(equipmentLabels([], idx)).toEqual([]);
+  expect(equipmentLabels(null, idx)).toEqual([]);
+});
+
+test('edge: buildResourceIndex tolerates missing/undefined constraints', () => {
+  expect(buildResourceIndex(undefined).size).toBe(0);
+  expect(buildResourceIndex({}).size).toBe(0);
+});
+
+test('edge: label helpers tolerate an absent index', () => {
+  expect(facilitatorLabel('ah-01', undefined)).toBe('ah-01');
+  expect(equipmentLabels(['eq-01'], undefined)).toEqual(['eq-01']);
 });

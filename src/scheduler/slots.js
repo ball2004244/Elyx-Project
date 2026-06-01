@@ -126,7 +126,11 @@ export function targetPlacements(activity, startDay, endDay) {
   }
 
   // period === 'year'
-  const instances = Math.max(1, Math.round((count * days.length) / 365));
+  const DAYS_PER_YEAR = 365;
+  const instances = Math.max(
+    1,
+    Math.round((count * days.length) / DAYS_PER_YEAR),
+  );
   return spreadDays(days, instances, dayPhase).map((day) => ({
     day,
     anchorMin: DAY_START_MIN + jitter,

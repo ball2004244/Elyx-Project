@@ -99,9 +99,30 @@ test('edge: zero-weight types are omitted from the plan', () => {
   expect(types.has('food')).toBe(true);
 });
 
-test('edge: a small total still yields valid, in-range priorities', () => {
+test('edge: small / zero totals respect the exact count (no min-1 floor)', () => {
+  // Regression for the floor bug: total<5 used to over-produce (1 per type).
+  expect(sampleRandomActionPlan({ total: 0 }).length).toBe(0);
+  expect(sampleRandomActionPlan({ total: 3, seed: 3 }).length).toBe(3);
+  expect(typeCounts(0)).toEqual({
+    fitness: 0,
+    food: 0,
+    medication: 0,
+    therapy: 0,
+    consultation: 0,
+  });
+  // All-zero distribution must not crash and yields no activities.
+  expect(
+    typeCounts(50, {
+      fitness: 0,
+      food: 0,
+      medication: 0,
+      therapy: 0,
+      consultation: 0,
+    }),
+  ).toEqual({});
+  // A small but non-zero total stays in-range and exact.
   const plan = sampleRandomActionPlan({ total: 5, seed: 3 });
-  expect(plan.length).toBeGreaterThan(0);
+  expect(plan).toHaveLength(5);
   for (const a of plan) {
     expect(a.priority).toBeGreaterThanOrEqual(1);
     expect(a.priority).toBeLessThanOrEqual(10);
